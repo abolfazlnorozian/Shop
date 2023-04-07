@@ -23,8 +23,11 @@ func main() {
 	}
 	router.ProRouter(v1)
 	router.CategoryRouter(v1)
+
 	go func() {
 		db.MD()
+
 	}()
+
 	r.Run(":" + port)
 }

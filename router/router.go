@@ -11,8 +11,9 @@ func ProRouter(r *gin.RouterGroup) {
 
 	pro.GET("/products", services.FindAllProducts)
 }
-func CategoryRouter(r *gin.RouterGroup) {
-	pro := r.Group("/")
 
-	pro.GET("/categories", services.FindAllCategories)
+func CategoryRouter(r *gin.RouterGroup) {
+	c := r.Group("/")
+
+	c.GET("/categories", services.FindAllCategories)
 }

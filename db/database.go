@@ -1,28 +1,63 @@
 package db
 
 import (
-	"log"
-	"os"
+	"context"
+	"fmt"
 
-	"github.com/joho/godotenv"
-	"gopkg.in/mgo.v2"
+	"log"
+	"time"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var MgoConnect *mgo.Collection
+func MD() *mongo.Client {
 
-func MD() {
-	err := godotenv.Load(".env")
+	client, err := mongo.NewClient(options.Client().ApplyURI(EnvMongoURL()))
 	if err != nil {
-		log.Fatalln("Error loading .env file")
+		log.Fatal(err)
 	}
-	MongoDb := os.Getenv("MONGO_URL")
-	DbName := os.Getenv("DBNAME")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	err = client.Connect(ctx)
+	defer cancel()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	session, err := mgo.Dial(MongoDb)
+	//ping the database
+	err = client.Ping(ctx, nil)
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
-	MgoConnect = session.DB(DbName).C("products")
-	//MgoConnect = session.DB(DbName).C("categories")
+	fmt.Println("Connected to MongoDB")
+	return client
 
 }
+
+var DB *mongo.Client = MD()
+
+// func MD2() {
+// 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+// 	err := godotenv.Load(".env")
+// 	if err != nil {
+// 		log.Fatalln("Error loading .env file")
+// 	}
+// 	// MongoDb := os.Getenv("MONGO_URL")
+// 	DbName := os.Getenv("DBNAME")
+
+// 	mongoconn := options.Client().ApplyURI(EnvMongoURL())
+
+// 	MongoClient, err := mongo.Connect(ctx, mongoconn)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	err = MongoClient.Ping(ctx, readpref.Primary())
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	fmt.Println("mongo connection established.")
+// 	MongoCollect = MongoClient.Database(DbName).Collection("products")
+// 	MongoCollect = MongoClient.Database(DbName).Collection("categories")
+// 	MgoConn:=dbconnect.MgoFindAllCategories(MongoCollect)
+// 	service:=services.FindAllCategories(MgoConn)
+// }
