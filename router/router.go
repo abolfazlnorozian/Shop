@@ -17,3 +17,8 @@ func CategoryRouter(r *gin.RouterGroup) {
 
 	c.GET("/categories", services.FindAllCategories)
 }
+func UserRoutes(r *gin.RouterGroup) {
+	u := r.Group("/")
+	u.POST("/createdUsers", services.RegisterUsers)
+	u.POST("/login", services.LoginUser)
+}
