@@ -21,7 +21,9 @@ var userCollection *mongo.Collection = db.GetCollection(db.DB, "admins")
 var SECRET_KEY string = os.Getenv("SECRET_KEY")
 
 type SignedDetails struct {
-	Role string
+	Username string
+	Role     string
+	Uid      string
 	jwt.StandardClaims
 }
 
@@ -74,9 +76,11 @@ func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
 
 }
 
-func GenerateAllTokens(role string) (signedToken string, signedRefreshToken string, err error) {
+func GenerateAllTokens(username string, role string) (signedToken string, signedRefreshToken string, err error) {
 	claims := &SignedDetails{
-		Role: role,
+		Username: username,
+		Role:     role,
+		//Uid:      uid,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(24)).Unix(),
 		},
@@ -97,7 +101,7 @@ func GenerateAllTokens(role string) (signedToken string, signedRefreshToken stri
 	return token, refreshToken, err
 }
 
-func UpdateAllTokens(signedToken string, signedRefreshToken string, userId primitive.ObjectID) {
+func UpdateAllTokens(signedToken string, signedRefreshToken string, role string) {
 	var ctx, cancle = context.WithTimeout(context.Background(), 100*time.Second)
 	var updateObj primitive.D
 	//append token and refreshtoken in update object
@@ -106,7 +110,7 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, userId primi
 	UpdatedAt, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	updateObj = append(updateObj, bson.E{Key: "updatedAt", Value: UpdatedAt})
 	upsert := true
-	filter := bson.M{"_id": userId}
+	filter := bson.M{"role": role}
 	opt := options.UpdateOptions{
 		Upsert: &upsert,
 	}

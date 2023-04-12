@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"shop/db"
 	"shop/entity"
@@ -36,12 +37,28 @@ func RegisterUsers(c *gin.Context) {
 		return
 		//fmt.Println(validationErr)
 	}
+	count, err := userCollection.CountDocuments(ctx, bson.M{"username": user.Username})
+
+	if err != nil {
+		log.Panic(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while cheking for the email"})
+	}
 	password := middleware.HashPassword(*user.Password)
 	user.Password = &password
+	// count, err = userCollection.CountDocuments(ctx, bson.M{"role": user.Role})
+	// defer cancel()
+	// if err != nil {
+	// 	log.Panic(err)
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while cheking for the role number"})
+	// }
+	if count > 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "this username or role number already exists"})
+	}
 	user.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	user.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	user.ID = primitive.NewObjectID()
-	//token, refreshToken, err := middleware.GenerateAllTokens(*user.Role)
+	//user.UserId = user.ID.Hex()
+	//token, refreshToken, err := middleware.GenerateAllTokens(*user.Username, *user.Role, user.UserId)
 	//user.Token = &token
 	//fmt.Println(err)
 	//user.RefreshToken = &refreshToken
@@ -51,6 +68,7 @@ func RegisterUsers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return
 	}
+	defer cancel()
 
 	c.JSON(http.StatusOK, resultInsertionNumber)
 
@@ -61,7 +79,7 @@ func LoginUser(c *gin.Context) {
 	var user entity.Users
 	var foundUser entity.Users
 	defer cancle()
-	if err := c.Bind(&user); err != nil {
+	if err := c.ShouldBind(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
@@ -71,18 +89,18 @@ func LoginUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	passwordIsValid, msg := middleware.VerifyPassword(*user.Password, *foundUser.Password)
+	passwordIsValid, _ := middleware.VerifyPassword(*user.Password, *foundUser.Password)
 	defer cancle()
 	if passwordIsValid != true {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Password is incorrect"})
 		return
 	}
 	if foundUser.Username == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "user not found"})
 	}
-	token, refreshToken, _ := middleware.GenerateAllTokens(*foundUser.Role)
-	middleware.UpdateAllTokens(token, refreshToken, foundUser.ID)
-	err = userCollection.FindOne(ctx, bson.M{"_id": foundUser.ID}).Decode(&foundUser)
+	token, refreshToken, _ := middleware.GenerateAllTokens(*foundUser.Username, foundUser.Role)
+	middleware.UpdateAllTokens(token, refreshToken, foundUser.Role)
+	err = userCollection.FindOne(ctx, bson.M{"role": foundUser.Role}).Decode(&foundUser)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -1,6 +1,7 @@
 package router
 
 import (
+	"shop/middleware"
 	"shop/services"
 
 	"github.com/gin-gonic/gin"
@@ -8,6 +9,7 @@ import (
 
 func ProRouter(r *gin.RouterGroup) {
 	pro := r.Group("/")
+	pro.Use(middleware.Authenticate())
 
 	pro.GET("/products", services.FindAllProducts)
 }
