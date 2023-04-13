@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"shop/db"
 	"shop/entity"
+	"shop/middleware"
 	"shop/response"
 	"time"
 
@@ -16,10 +17,16 @@ import (
 var proCollection *mongo.Collection = db.GetCollection(db.DB, "products")
 
 func FindAllProducts(c *gin.Context) {
+	if err := middleware.CheckUserType(c, "admin"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	var products []entity.Products
 	defer cancel()
+
 	results, err := proCollection.Find(ctx, bson.M{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"massage": "Not Find Collection"})
