@@ -13,20 +13,16 @@ func Authenticate() gin.HandlerFunc {
 		clientToken := c.Request.Header.Get("token")
 		if clientToken == "" {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("no Authorization header provided")})
-			c.Abort() //baraye amniat
+			c.Abort()
 			return
 		}
-		//claims tamami etelaate dorosti ke ma migirim hastan
-		claims, err := ValidateToken(clientToken) //token haei ke ok hastan baraye userha
+		claims, err := ValidateToken(clientToken)
 		if err != "" {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 			c.Abort()
 			return
 		}
 		c.Set("username", claims.Username)
-		// c.Set("firstname", claims.FirstName)
-		// c.Set("lastname", claims.LastName)
-		//c.Set("uid", claims.Uid)
 		c.Set("role", claims.Role)
 		c.Next()
 

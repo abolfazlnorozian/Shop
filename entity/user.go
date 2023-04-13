@@ -14,6 +14,4 @@ type Users struct {
 	CreatedAt time.Time          `json:"createdAt" bson:"createdAt"`
 	UpdatedAt time.Time          `json:"updatedAt" bson:"updatedAt"`
 	V         int                `json:"__v" bson:"__v"`
-	//UserId    string             `json:"userId"`
-
 }

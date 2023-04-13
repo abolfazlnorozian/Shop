@@ -31,11 +31,10 @@ func RegisterUsers(c *gin.Context) {
 		})
 		return
 	}
-	validationErr := validate.Struct(user) //errorha ra be kharej hedayat mikonad
+	validationErr := validate.Struct(user)
 	if validationErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
 		return
-		//fmt.Println(validationErr)
 	}
 	count, err := userCollection.CountDocuments(ctx, bson.M{"username": user.Username})
 
@@ -45,23 +44,12 @@ func RegisterUsers(c *gin.Context) {
 	}
 	password := middleware.HashPassword(*user.Password)
 	user.Password = &password
-	// count, err = userCollection.CountDocuments(ctx, bson.M{"role": user.Role})
-	// defer cancel()
-	// if err != nil {
-	// 	log.Panic(err)
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while cheking for the role number"})
-	// }
 	if count > 0 {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "this username or role number already exists"})
 	}
 	user.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	user.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	user.ID = primitive.NewObjectID()
-	//user.UserId = user.ID.Hex()
-	//token, refreshToken, err := middleware.GenerateAllTokens(*user.Username, *user.Role, user.UserId)
-	//user.Token = &token
-	//fmt.Println(err)
-	//user.RefreshToken = &refreshToken
 	resultInsertionNumber, insertErr := userCollection.InsertOne(ctx, user)
 	if insertErr != nil {
 		msg := fmt.Sprintf("User item was not created")
@@ -105,6 +93,6 @@ func LoginUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"body": gin.H{"token": &token, "refreshToken": &refreshToken}, "message": "login-admin", "success": true})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "login-admin", "body": gin.H{"token": &token, "refreshToken": &refreshToken}})
 
 }
