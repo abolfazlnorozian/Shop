@@ -58,5 +58,11 @@ func AddProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "product not truth"})
 		return
 	}
+	_, err := categoryCollection.InsertOne(c, &pro)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": pro})
 
 }

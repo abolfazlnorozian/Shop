@@ -7,7 +7,7 @@ import (
 )
 
 type Products struct {
-	ID              primitive.ObjectID   `json:"_id" bson:"_id"`
+	ID              primitive.ObjectID   `json:"id" bson:"id"`
 	Amazing         bool                 `json:"amazing" bson:"amazing"`
 	IsMillModel     bool                 `json:"isMillModel" bson:"isMillModel"`
 	ProductType     string               `json:"productType" bson:"productType"`
@@ -22,7 +22,7 @@ type Products struct {
 	Name            string               `json:"name" bson:"name"`
 	Price           int                  `json:"price" bson:"price"`
 	Details         string               `json:"details" bson:"details"`
-	DiscountPercent int                  `json:"discountpercent" bson:"discountpercent"`
+	DiscountPercent int                  `json:"discountPercent" bson:"discountPercent"`
 	Stock           int                  `json:"stock" bson:"stock"`
 	CategoryID      string               `json:"categoryId" bson:"categoryId"`
 	Attributes      []Attribute          `json:"attributes" bson:"attributes"`
