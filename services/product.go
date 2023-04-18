@@ -47,3 +47,16 @@ func FindAllProducts(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": &products}})
 }
+func AddProduct(c *gin.Context) {
+	if err := middleware.CheckUserType(c, "admin"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+
+	}
+	var pro entity.Products
+	if err := c.ShouldBindJSON(&pro); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "product not truth"})
+		return
+	}
+
+}

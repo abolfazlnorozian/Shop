@@ -11,6 +11,7 @@ func ProRouter(r *gin.RouterGroup) {
 	pro := r.Group("/")
 	pro.Use(middleware.Authenticate())
 	pro.GET("/products", services.FindAllProducts)
+	pro.POST("/addproduct", services.AddProduct)
 }
 
 func CategoryRouter(r *gin.RouterGroup) {
