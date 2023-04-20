@@ -3,11 +3,13 @@ package entity
 import (
 	"time"
 
+	//"gopkg.in/mgo.v2/bson"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Products struct {
-	ID              primitive.ObjectID   `json:"id" bson:"id"`
+	ID              primitive.ObjectID   `json:"id,omitempty" bson:"id,omitempty"`
 	Amazing         bool                 `json:"amazing" bson:"amazing"`
 	IsMillModel     bool                 `json:"isMillModel" bson:"isMillModel"`
 	ProductType     string               `json:"productType" bson:"productType"`
@@ -37,7 +39,7 @@ type Products struct {
 }
 
 type ImagePro struct {
-	ID  primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	ID  primitive.ObjectID `json:"_id,omitempty" bson:"_id"`
 	Url string             `json:"url" bson:"url"`
 }
 type Attribute struct {
