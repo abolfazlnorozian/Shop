@@ -12,12 +12,15 @@ func ProRouter(r *gin.RouterGroup) {
 	pro := r.Group("/")
 	pro.Use(middleware.Authenticate())
 	pro.GET("/products", services.FindAllProducts)
+	pro.POST("/addproduct", services.AddProduct())
 }
 
 func CategoryRouter(r *gin.RouterGroup) {
 	c := r.Group("/")
-
+	ca := r.Group("/")
+	ca.Use(middleware.Authenticate())
 	c.GET("/categories", services.FindAllCategories)
+	ca.POST("/add", services.AddCategories)
 }
 func UserRoutes(r *gin.RouterGroup) {
 	u := r.Group("/")
