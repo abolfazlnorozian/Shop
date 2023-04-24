@@ -5,7 +5,7 @@ import (
 )
 
 type Category struct {
-	ID        primitive.ObjectID `json:"_id" bson:"_id"`
+	ID        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	Images    Image              `json:"image" bson:"image"`
 	Parent    interface{}        `json:"parent" bson:"parent"`
 	Name      string             `json:"name" bson:"name"`
