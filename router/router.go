@@ -3,6 +3,7 @@ package router
 import (
 	"shop/middleware"
 	"shop/services"
+	"shop/upload"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,4 +23,14 @@ func UserRoutes(r *gin.RouterGroup) {
 	u := r.Group("/")
 	u.POST("/createdUsers", services.RegisterUsers)
 	u.POST("/login", services.LoginUser)
+}
+func Uploader(r *gin.RouterGroup) {
+	up := r.Group("/admin")
+	up.Use(middleware.Authenticate())
+	up.POST("/upload", upload.Uploadpath)
+
+}
+func Downloader(r *gin.RouterGroup) {
+	do := r.Group("/")
+	do.Static("/download", "./public/images")
 }
