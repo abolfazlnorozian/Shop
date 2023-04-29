@@ -5,42 +5,41 @@ import (
 	"shop/db"
 	"shop/entity"
 	"shop/middleware"
-	"shop/response"
+
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var categoryCollection *mongo.Collection = db.GetCollection(db.DB, "categories")
 
-// var validate1 = validator.New()
-
 func FindAllCategories(c *gin.Context) {
-	// if err := middleware.CheckUserType(c, "admin"); err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 	return
-	// }
-	//ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
 	var categories []*entity.Category
-	//defer cancel()
+
 	results, err := categoryCollection.Find(c, bson.D{{}})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"massage": "Not Find Collection"})
+		c.JSON(http.StatusInternalServerError, gin.H{"massage": "collection not found"})
 		return
 	}
-	//defer results.Close(ctx)
+
 	for results.Next(c) {
+
 		var title entity.Category
-		err := results.Decode(&title)
+		//var resCh entity.Category
+
+		err = results.Decode(&title)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
 
 		}
+
 		categories = append(categories, &title)
 
 	}
+
 	if err := results.Err(); err != nil {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "results has error"})
@@ -54,14 +53,16 @@ func FindAllCategories(c *gin.Context) {
 		return
 
 	}
+	//fmt.Println(title)
+	//var title []entity.Category
 
-	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": categories}})
+	c.JSON(http.StatusOK, gin.H{"message": categories})
+
 }
 
 func AddCategories(c *gin.Context) {
-	//ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
+
 	var title entity.Category
-	//defer cancel()
 
 	if err := c.ShouldBindJSON(&title); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -81,7 +82,6 @@ func AddCategories(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	//defer cancel()
 
 	c.JSON(http.StatusOK, gin.H{"message": title})
 
