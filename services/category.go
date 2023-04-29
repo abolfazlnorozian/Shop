@@ -17,11 +17,7 @@ var categoryCollection *mongo.Collection = db.GetCollection(db.DB, "categories")
 // var validate1 = validator.New()
 
 func FindAllCategories(c *gin.Context) {
-	// if err := middleware.CheckUserType(c, "admin"); err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 	return
-	// }
-	//ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
 	var categories []*entity.Category
 	//defer cancel()
 	results, err := categoryCollection.Find(c, bson.D{{}})
