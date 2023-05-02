@@ -11,5 +11,5 @@ type Images struct {
 	Url       *string             `form:"url" json:"url" bson:"url"`
 	CreatedAt time.Time           `form:"createdAt" json:"createdAt" bson:"createdAt"`
 	UpdatedAt time.Time           `form:"updatedAt" json:"updatedAt" bson:"updatedAt"`
-	V         int                 `form:"__v" json:"__v" bson:"__v"`
+	V         int                 `form:"__v" json:"__v,omitempty" bson:"__v"`
 }
