@@ -24,6 +24,8 @@ func main() {
 	router.ProRouter(v1)
 	router.CategoryRouter(v1)
 	router.UserRoutes(v1)
+	router.Uploader(v1)
+	router.Downloader(v1)
 
 	go func() {
 		db.MD()

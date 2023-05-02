@@ -34,6 +34,7 @@ func Uploader(r *gin.RouterGroup) {
 
 }
 func Downloader(r *gin.RouterGroup) {
-	do := r.Group("/")
-	do.Static("/download", "./public/images")
+	down := r.Group("/")
+	down.Static("/download", "./public/images")
+
 }
