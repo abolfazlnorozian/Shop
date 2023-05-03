@@ -31,7 +31,7 @@ func Uploader(r *gin.RouterGroup) {
 	up := r.Group("/admin")
 	up.Use(middleware.Authenticate())
 	up.POST("/upload", upload.Uploadpath)
-	up.GET("/download/all", upload.FindAllImages)
+	up.GET("/downloads", upload.FindAllImages)
 
 }
 func Downloader(r *gin.RouterGroup) {

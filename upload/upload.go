@@ -93,6 +93,6 @@ func FindAllImages(c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": &img}})
+	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"docs": &img}})
 
 }
