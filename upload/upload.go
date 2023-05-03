@@ -80,6 +80,11 @@ func FindAllImages(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"massage": err.Error()})
 		return
 	}
+	count, err := imgCollection.CountDocuments(c, filter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"massage": err.Error()})
+		return
+	}
 	//results.Close(ctx)
 	for results.Next(c) {
 		var image entity.Images
@@ -93,6 +98,6 @@ func FindAllImages(c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"docs": &img}})
+	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"docs": &img}, TotalDocs: int(count)})
 
 }
