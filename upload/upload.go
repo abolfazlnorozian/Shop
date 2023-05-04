@@ -104,6 +104,6 @@ func FindAllImages(c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"docs": &img}, TotalDocs: float64(count), Limit: float64(limit), TotalPages: int(roundedup)})
+	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"docs": &img, "totalDocs": count, "limit": float64(limit), "totalPages": int(roundedup)}})
 
 }
