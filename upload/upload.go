@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"shop/db"
@@ -88,6 +89,7 @@ func FindAllImages(c *gin.Context) {
 	}
 	limit := 20.00
 	totalPages := float64(count) / limit
+	roundedup := math.Ceil(totalPages)
 
 	//results.Close(ctx)
 	for results.Next(c) {
@@ -102,6 +104,6 @@ func FindAllImages(c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"docs": &img}, TotalDocs: float32(count), Limit: float32(limit), TotalPages: int(totalPages)})
+	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"docs": &img}, TotalDocs: float64(count), Limit: float64(limit), TotalPages: int(roundedup)})
 
 }
