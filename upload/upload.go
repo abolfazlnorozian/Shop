@@ -48,7 +48,8 @@ func Uploadpath(ctx *gin.Context) {
 
 	filepath := "uploads/" + filename
 	var img entity.Images
-	if err := ctx.BindHeader(&img); err != nil {
+	if err := ctx.Bind(&img); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
