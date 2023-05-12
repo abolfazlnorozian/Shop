@@ -19,11 +19,6 @@ func FindAllCategories(c *gin.Context) {
 	var categories []entity.Category
 	var result []*entity.Response
 
-	// filter := options.Find().SetProjection(bson.D{{Key: "image", Value: 0}, {Key: "parent", Value: 0}, {Key: "name", Value: 0}, {Key: "ancestors", Value: 0}, {Key: "slug", Value: 0}, {Key: "__v", Value: 0}, {Key: "details", Value: 0}, {Key: "faq", Value: 0}, {Key: "children", Value: 0}})
-	// opt := bson.D{{Key: "parent", Value: bson.D{{Key: "$eq", Value: filter}}}}
-
-	//opt := options.Find().SetSort(bson.D{{Key: "parent", Value: bson.D{{Key: "$eq", Value: "_id"}}}})
-
 	results, err := categoryCollection.Find(c, bson.D{{}})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"massage": err.Error()})
