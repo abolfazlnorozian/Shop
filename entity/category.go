@@ -5,16 +5,15 @@ import (
 )
 
 type Category struct {
-	ID        *primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	ID        *primitive.ObjectID `json:"_id" bson:"_id"`
 	Images    Image               `json:"image" bson:"image"`
-	Parent    *primitive.ObjectID `json:"parent" form:"parent" bson:"parent"`
+	Parent    primitive.ObjectID  `json:"parent" form:"parent" bson:"parent"`
 	Name      string              `json:"name" bson:"name"`
 	Ancestors []Ancestor          `json:"ancestors" bson:"ancestors"`
 	Slug      string              `json:"slug" bson:"slug"`
 	V         int                 `json:"__v" bson:"__v"`
 	Details   string              `json:"details" bson:"details"`
 	Faq       []NewFaq            `json:"faq" bson:"faq"`
-	Children  []Child             `json:"children" bson:"children"`
 }
 type Image struct {
 	Url string `json:"url" bson:"url"`
@@ -31,14 +30,14 @@ type Ancestor struct {
 	Slug string             `json:"slug" bson:"slug"`
 }
 
-type Child struct {
+type Response struct {
 	ID        primitive.ObjectID `json:"_id" bson:"_id"`
 	Images    Image              `json:"image" bson:"image"`
-	Parent    primitive.ObjectID `json:"parent" bson:"parent"`
 	Name      string             `json:"name" bson:"name"`
 	Ancestors []Ancestor         `json:"ancestors" bson:"ancestors"`
 	Slug      string             `json:"slug" bson:"slug"`
 	V         int                `json:"__v" bson:"__v"`
 	Details   string             `json:"details" bson:"details"`
 	Faq       []NewFaq           `json:"faq" bson:"faq"`
+	Children  []*Response        `json:"children" bson:"children"`
 }

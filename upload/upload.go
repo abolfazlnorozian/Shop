@@ -77,6 +77,7 @@ func FindAllImages(c *gin.Context) {
 	//defer cancel()
 
 	opts := options.Find().SetProjection(bson.D{{Key: "createdAt", Value: 0}, {Key: "updatedAt", Value: 0}, {Key: "__v", Value: 0}})
+
 	filter := bson.D{}
 	results, err := imgCollection.Find(c, filter, opts)
 	if err != nil {
