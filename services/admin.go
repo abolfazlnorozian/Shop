@@ -21,9 +21,9 @@ var userCollection *mongo.Collection = db.GetCollection(db.DB, "admins")
 
 var validate = validator.New()
 
-func RegisterUsers(c *gin.Context) {
+func RegisterAdmins(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	var user entity.Users
+	var user entity.Admins
 	defer cancel()
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -62,10 +62,10 @@ func RegisterUsers(c *gin.Context) {
 
 }
 
-func LoginUser(c *gin.Context) {
+func LoginAdmin(c *gin.Context) {
 	var ctx, cancle = context.WithTimeout(context.Background(), 100*time.Second)
-	var user entity.Users
-	var foundUser entity.Users
+	var user entity.Admins
+	var foundUser entity.Admins
 	defer cancle()
 	if err := c.ShouldBind(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})

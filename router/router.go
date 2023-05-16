@@ -24,8 +24,8 @@ func CategoryRouter(r *gin.RouterGroup) {
 }
 func UserRoutes(r *gin.RouterGroup) {
 	u := r.Group("/")
-	u.POST("/createdUsers", services.RegisterUsers)
-	u.POST("/login", services.LoginUser)
+	u.POST("/createdAdmin", services.RegisterAdmins)
+	u.POST("/login", services.LoginAdmin)
 }
 func Uploader(r *gin.RouterGroup) {
 	up := r.Group("/admin")
