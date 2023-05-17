@@ -71,3 +71,5 @@ func AddProduct() gin.HandlerFunc {
 
 	}
 }
+
+// func GetProductById(c *gin.Context)
