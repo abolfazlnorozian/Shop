@@ -101,10 +101,6 @@ func LoginUsers(c *gin.Context) {
 	}
 	passwordIsValid, _ := related.VerifyPassword(*user.VerifyCode, *foundUser.VerifyCode)
 	defer cancle()
-	// if !passwordIsValid {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Verification code is incorrect"})
-	// 	return
-	// }
 	if passwordIsValid != true {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Password is incorrect"})
 		return
