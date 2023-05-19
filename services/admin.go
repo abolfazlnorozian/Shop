@@ -43,6 +43,7 @@ func RegisterAdmins(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while cheking for the email"})
 	}
 	password := middleware.HashPassword(*admin.Password)
+
 	admin.Password = &password
 	if count > 0 {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "this username or role number already exists"})
@@ -50,6 +51,7 @@ func RegisterAdmins(c *gin.Context) {
 	admin.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	admin.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	admin.ID = primitive.NewObjectID()
+	admin.Role = "admin"
 	resultInsertionNumber, insertErr := userCollection.InsertOne(ctx, admin)
 	if insertErr != nil {
 		msg := fmt.Sprintf("User item was not created")
@@ -77,6 +79,7 @@ func LoginAdmin(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	passwordIsValid, _ := middleware.VerifyPassword(*user.Password, *foundUser.Password)
 	defer cancle()
 	if passwordIsValid != true {

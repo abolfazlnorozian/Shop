@@ -40,6 +40,7 @@ func Downloader(r *gin.RouterGroup) {
 
 }
 func UserRoute(r *gin.RouterGroup) {
-	us := r.Group("/createdUser")
-	us.POST("/", services.RegisterUsers)
+	us := r.Group("/")
+	us.POST("/createdUser", services.RegisterUsers)
+	us.POST("/loginUser", services.LoginUsers)
 }
