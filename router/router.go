@@ -22,7 +22,7 @@ func CategoryRouter(r *gin.RouterGroup) {
 	c.GET("/categories", services.FindAllCategories)
 	ca.POST("/add", services.AddCategories)
 }
-func UserRoutes(r *gin.RouterGroup) {
+func AdminRoutes(r *gin.RouterGroup) {
 	u := r.Group("/")
 	u.POST("/createdAdmin", services.RegisterAdmins)
 	u.POST("/login", services.LoginAdmin)
@@ -38,4 +38,9 @@ func Downloader(r *gin.RouterGroup) {
 	down := r.Group("/")
 	down.Static("/download", "./public/images")
 
+}
+func UserRoute(r *gin.RouterGroup) {
+	us := r.Group("/")
+	us.POST("/createdUser", services.RegisterUsers)
+	us.POST("/loginUser", services.LoginUsers)
 }

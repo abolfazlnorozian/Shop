@@ -23,34 +23,36 @@ var validate = validator.New()
 
 func RegisterAdmins(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	var user entity.Admins
+	var admin entity.Admins
 	defer cancel()
-	if err := c.ShouldBindJSON(&user); err != nil {
+	if err := c.ShouldBindJSON(&admin); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
 		})
 		return
 	}
-	validationErr := validate.Struct(user)
+	validationErr := validate.Struct(admin)
 	if validationErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
 		return
 	}
-	count, err := userCollection.CountDocuments(ctx, bson.M{"username": user.Username})
+	count, err := userCollection.CountDocuments(ctx, bson.M{"username": admin.Username})
 
 	if err != nil {
 		log.Panic(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while cheking for the email"})
 	}
-	password := middleware.HashPassword(*user.Password)
-	user.Password = &password
+	password := middleware.HashPassword(*admin.Password)
+
+	admin.Password = &password
 	if count > 0 {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "this username or role number already exists"})
 	}
-	user.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	user.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	user.ID = primitive.NewObjectID()
-	resultInsertionNumber, insertErr := userCollection.InsertOne(ctx, user)
+	admin.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	admin.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	admin.ID = primitive.NewObjectID()
+	admin.Role = "admin"
+	resultInsertionNumber, insertErr := userCollection.InsertOne(ctx, admin)
 	if insertErr != nil {
 		msg := fmt.Sprintf("User item was not created")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
@@ -77,6 +79,7 @@ func LoginAdmin(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	passwordIsValid, _ := middleware.VerifyPassword(*user.Password, *foundUser.Password)
 	defer cancle()
 	if passwordIsValid != true {
@@ -94,5 +97,4 @@ func LoginAdmin(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "login-admin", "body": gin.H{"token": &token, "refreshToken": &refreshToken}})
-
 }
