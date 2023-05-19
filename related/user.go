@@ -1,24 +1,28 @@
 package related
 
 import (
+	"fmt"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
 func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	if err != nil {
-		//log.Panic(err)
 		return "", err
 	}
 	return string(bytes), nil
 
 }
 
-func VerifyPassword(providedPassword string, hashedPassword string) (bool, error) {
-	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(providedPassword))
+func VerifyPassword(userPassword string, providedPassword string) (bool, string) {
+	err := bcrypt.CompareHashAndPassword([]byte(providedPassword), []byte(userPassword))
+	check := true
+	msg := ""
 	if err != nil {
-		return false, err
+		msg = fmt.Sprintf("email of password is incorrect")
+		check = false
 	}
-	return true, nil
+	return check, msg
 
 }

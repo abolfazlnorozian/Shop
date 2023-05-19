@@ -83,28 +83,36 @@ func RegisterUsers(c *gin.Context) {
 }
 
 func LoginUsers(c *gin.Context) {
-	var ctx, cancle = context.WithTimeout(context.Background(), 100*time.Second)
+	var ctx, cancle = context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancle()
+
 	var user entity.Users
 	var foundUser entity.Users
-	defer cancle()
-	if err := c.ShouldBind(&user); err != nil {
+
+	if err := c.Bind(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	err := userCollection.FindOne(ctx, bson.M{"phoneNmber": user.PhoneNumber}).Decode(&foundUser)
-	if err == mongo.ErrNoDocuments {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	} else if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "An error occurred "})
+
+	err := usersCollection.FindOne(ctx, bson.M{"phoneNumber": user.PhoneNumber}).Decode(&foundUser)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	passwordIsValid, _ := related.VerifyPassword(*user.VerifyCode, *foundUser.VerifyCode)
 	defer cancle()
-	if !passwordIsValid {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Verification code is incorrect"})
+	// if !passwordIsValid {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Verification code is incorrect"})
+	// 	return
+	// }
+	if passwordIsValid != true {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Password is incorrect"})
 		return
 	}
+	if foundUser.VerifyCode == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "user not found"})
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "success"})
 
 }
