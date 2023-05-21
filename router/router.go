@@ -10,9 +10,11 @@ import (
 
 func ProRouter(r *gin.RouterGroup) {
 	pro := r.Group("/")
-	pro.Use(middleware.Authenticate())
-	pro.GET("/products", services.FindAllProducts)
-	pro.POST("/addproduct", services.AddProduct())
+	au := r.Group("/")
+	au.Use(middleware.Authenticate())
+	au.GET("/products", services.FindAllProducts)
+	au.POST("/addproduct", services.AddProduct())
+	pro.GET("/getProduct/:slug", services.GetProductBySlug)
 }
 
 func CategoryRouter(r *gin.RouterGroup) {

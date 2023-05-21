@@ -72,4 +72,19 @@ func AddProduct() gin.HandlerFunc {
 	}
 }
 
-// func GetProductById(c *gin.Context)
+func GetProductBySlug(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	slug := c.Param("slug")
+	var pro entity.Products
+	defer cancel()
+
+	//slg := strings(slug)
+
+	err := proCollection.FindOne(ctx, bson.M{"slug": slug}).Decode(&pro)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, pro)
+
+}
