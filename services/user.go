@@ -9,6 +9,7 @@ import (
 	"shop/entity"
 	"shop/middleware"
 	"shop/related"
+	"shop/response"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -83,7 +84,7 @@ func RegisterUsers(c *gin.Context) {
 }
 
 func LoginUsers(c *gin.Context) {
-	var ctx, cancle = context.WithTimeout(context.Background(), 60*time.Second)
+	var ctx, cancle = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancle()
 
 	var user entity.Users
@@ -111,4 +112,36 @@ func LoginUsers(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "success"})
 
+}
+
+func GetAllUsers(c *gin.Context) {
+	if err := middleware.CheckUserType(c, "admin"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	var users []entity.Users
+	defer cancel()
+
+	results, err := usersCollection.Find(ctx, bson.M{})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"massage": "Not Find Collection"})
+		return
+	}
+	//results.Close(ctx)
+	for results.Next(ctx) {
+		var user entity.Users
+		err := results.Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+
+		}
+		users = append(users, user)
+
+	}
+
+	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": &users}})
 }

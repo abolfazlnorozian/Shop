@@ -41,6 +41,9 @@ func Downloader(r *gin.RouterGroup) {
 }
 func UserRoute(r *gin.RouterGroup) {
 	us := r.Group("/")
+	au := r.Group("/")
+	au.Use(middleware.Authenticate())
 	us.POST("/createdUser", services.RegisterUsers)
 	us.POST("/loginUser", services.LoginUsers)
+	au.GET("/users", services.GetAllUsers)
 }
