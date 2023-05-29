@@ -48,4 +48,5 @@ func UserRoute(r *gin.RouterGroup) {
 	us.POST("/createdUser", services.RegisterUsers)
 	us.POST("/loginUser", services.LoginUsers)
 	au.GET("/users", services.GetAllUsers)
+	us.PATCH("/updated", services.UpdatedUser)
 }

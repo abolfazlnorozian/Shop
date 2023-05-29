@@ -12,8 +12,8 @@ type Users struct {
 	FcmRegistratinToken string               `json:"fcmRegistrationToken" bson:"fcmRegistrationToken"`
 	Favorites           []primitive.ObjectID `json:"favoritesProducts" bson:"favoritesProducts"`
 	Username            string               `json:"username" form:"username" bson:"username"`
-	VerifyCode          *string              `json:"verifyCode" form:"verifyCode" bson:"verifyCode"`
-	PhoneNumber         *string              `json:"phoneNumber" form:"phoneNumber" bson:"phoneNumber"`
+	VerifyCode          string               `json:"verifyCode" form:"verifyCode" bson:"verifyCode"`
+	PhoneNumber         string               `json:"phoneNumber" form:"phoneNumber" bson:"phoneNumber"`
 	Sex                 int                  `json:"sex" bson:"sex"`
 	Role                string               `json:"role" bson:"role"`
 	Address             []Addr               `json:"address" bson:"address"`

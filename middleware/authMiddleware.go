@@ -29,6 +29,30 @@ func Authenticate() gin.HandlerFunc {
 	}
 
 }
+func UserAuthenticate() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		clientToken := c.Request.Header.Get("token")
+		if clientToken == "" {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("no Authorization header provided")})
+			c.Abort()
+			return
+		}
+		claims, err := ValidateUserToken(clientToken)
+		if err != "" {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			c.Abort()
+			return
+		}
+		c.Set("username", claims.Username)
+		c.Set("phoneNember", claims.PhoneNumber)
+		c.Set("role", claims.Role)
+		c.Set("lastName", claims.LastName)
+		c.Set("name", claims.Name)
+		c.Next()
+
+	}
+
+}
 
 //CheckUserType renews the user tokens when they login
 
@@ -51,6 +75,19 @@ func MatchUserTypeToUid(c *gin.Context, userId string) (err error) {
 	uid := c.GetString("uid")
 	err = nil
 	if userType == "USER" && uid != userId { //har user be dadehaye khodesh datrasi darad va faghat admin be hame dastrasi darad
+		err = errors.New("Unauthorize to access this resource")
+		return err
+	}
+	err = CheckUserType(c, userType)
+	return err
+
+}
+
+func MatchUsersTypeToUid(c *gin.Context, userId string) (err error) {
+	userType := c.GetString("role")
+	uid := c.GetString("uid")
+	err = nil
+	if uid != userId { //har user be dadehaye khodesh datrasi darad va faghat admin be hame dastrasi darad
 		err = errors.New("Unauthorize to access this resource")
 		return err
 	}
