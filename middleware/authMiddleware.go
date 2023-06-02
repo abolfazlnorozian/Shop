@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Authenticate() gin.HandlerFunc {
+func AdminAuthenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		clientToken := c.Request.Header.Get("token")
 		if clientToken == "" {
@@ -24,6 +24,30 @@ func Authenticate() gin.HandlerFunc {
 		}
 		c.Set("username", claims.Username)
 		c.Set("role", claims.Role)
+		c.Next()
+
+	}
+
+}
+func UserAuthenticate() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		clientToken := c.Request.Header.Get("token")
+		if clientToken == "" {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("no Authorization header provided")})
+			c.Abort()
+			return
+		}
+		uclaims, err := ValidateUserToken(clientToken)
+		if err != "" {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			c.Abort()
+			return
+		}
+
+		c.Set("phoneNumber", uclaims.PhoneNumber)
+		c.Set("role", uclaims.Role)
+		c.Set("tokenClaims", uclaims)
+
 		c.Next()
 
 	}
@@ -52,6 +76,20 @@ func MatchUserTypeToUid(c *gin.Context, userId string) (err error) {
 	err = nil
 	if userType == "USER" && uid != userId { //har user be dadehaye khodesh datrasi darad va faghat admin be hame dastrasi darad
 		err = errors.New("Unauthorize to access this resource")
+		return err
+	}
+	err = CheckUserType(c, userType)
+	return err
+
+}
+
+func MatchUsersTypeToUid(c *gin.Context, phoneNumber string) (err error) {
+	userType := c.GetString("role")
+	uid := c.GetString("phoneNumber")
+	err = nil
+	if userType == "user" && uid != phoneNumber { //har user be dadehaye khodesh datrasi darad va faghat admin be hame dastrasi darad
+		err = errors.New("Unauthorize to access this resource")
+		fmt.Println(err)
 		return err
 	}
 	err = CheckUserType(c, userType)
