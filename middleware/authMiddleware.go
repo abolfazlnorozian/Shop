@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Authenticate() gin.HandlerFunc {
+func AdminAuthenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		clientToken := c.Request.Header.Get("token")
 		if clientToken == "" {
@@ -37,17 +37,17 @@ func UserAuthenticate() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		claims, err := ValidateUserToken(clientToken)
+		uclaims, err := ValidateUserToken(clientToken)
 		if err != "" {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 			c.Abort()
 			return
 		}
-		c.Set("username", claims.Username)
-		c.Set("phoneNember", claims.PhoneNumber)
-		c.Set("role", claims.Role)
-		c.Set("lastName", claims.LastName)
-		c.Set("name", claims.Name)
+
+		c.Set("phoneNumber", uclaims.PhoneNumber)
+		c.Set("role", uclaims.Role)
+		c.Set("tokenClaims", uclaims)
+
 		c.Next()
 
 	}
@@ -83,12 +83,13 @@ func MatchUserTypeToUid(c *gin.Context, userId string) (err error) {
 
 }
 
-func MatchUsersTypeToUid(c *gin.Context, userId string) (err error) {
+func MatchUsersTypeToUid(c *gin.Context, phoneNumber string) (err error) {
 	userType := c.GetString("role")
-	uid := c.GetString("uid")
+	uid := c.GetString("phoneNumber")
 	err = nil
-	if uid != userId { //har user be dadehaye khodesh datrasi darad va faghat admin be hame dastrasi darad
+	if userType == "user" && uid != phoneNumber { //har user be dadehaye khodesh datrasi darad va faghat admin be hame dastrasi darad
 		err = errors.New("Unauthorize to access this resource")
+		fmt.Println(err)
 		return err
 	}
 	err = CheckUserType(c, userType)

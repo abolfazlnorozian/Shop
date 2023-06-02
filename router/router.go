@@ -11,7 +11,7 @@ import (
 func ProRouter(r *gin.RouterGroup) {
 	pro := r.Group("/")
 	au := r.Group("/")
-	au.Use(middleware.Authenticate())
+	au.Use(middleware.AdminAuthenticate())
 	au.GET("/products", services.FindAllProducts)
 	au.POST("/addproduct", services.AddProduct())
 	pro.GET("/getProduct/:slug", services.GetProductBySlug)
@@ -20,7 +20,7 @@ func ProRouter(r *gin.RouterGroup) {
 func CategoryRouter(r *gin.RouterGroup) {
 	c := r.Group("/")
 	ca := r.Group("/")
-	ca.Use(middleware.Authenticate())
+	ca.Use(middleware.AdminAuthenticate())
 	c.GET("/categories", services.FindAllCategories)
 	ca.POST("/add", services.AddCategories)
 }
@@ -31,7 +31,7 @@ func AdminRoutes(r *gin.RouterGroup) {
 }
 func Uploader(r *gin.RouterGroup) {
 	up := r.Group("/admin")
-	up.Use(middleware.Authenticate())
+	up.Use(middleware.AdminAuthenticate())
 	up.POST("/upload", upload.Uploadpath)
 	up.GET("/downloads", upload.FindAllImages)
 
@@ -43,10 +43,15 @@ func Downloader(r *gin.RouterGroup) {
 }
 func UserRoute(r *gin.RouterGroup) {
 	us := r.Group("/")
-	au := r.Group("/")
-	au.Use(middleware.Authenticate())
+
+	authUser := r.Group("/")
+	authUser.Use(middleware.UserAuthenticate())
+	authAdmin := r.Group("/")
+	//authAdmin.Use(middleware.AdminAuthenticate())
+
 	us.POST("/createdUser", services.RegisterUsers)
 	us.POST("/loginUser", services.LoginUsers)
-	au.GET("/users", services.GetAllUsers)
-	us.PATCH("/updated", services.UpdatedUser)
+	authAdmin.GET("/users", services.GetAllUsers)
+	authUser.PUT("/updated", services.UpdatedUser)
+
 }

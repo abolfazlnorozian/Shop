@@ -20,19 +20,16 @@ var usersCollection *mongo.Collection = db.GetCollection(db.DB, "users")
 var SECRET_KEYS string = os.Getenv("SECRET_KEY")
 
 type SignedUserDetails struct {
-	Username    string
-	PhoneNumber *string
+	PhoneNumber string
 	Role        string
-	LastName    string
-	Name        string
-	//Uid      string
+
 	jwt.StandardClaims
 }
 
 func ValidateUserToken(signedToken string) (claims *SignedUserDetails, msg string) {
 	token, err := jwt.ParseWithClaims(
 		signedToken,
-		&SignedDetails{},
+		&SignedUserDetails{},
 		func(token *jwt.Token) (interface{}, error) {
 			return []byte(SECRET_KEY), nil
 
@@ -57,14 +54,12 @@ func ValidateUserToken(signedToken string) (claims *SignedUserDetails, msg strin
 
 }
 
-func GenerateUserAllTokens(username string, phoneNumber string, role string, lastName string, name string) (signedToken string, signedRefreshToken string, err error) {
+func GenerateUserAllTokens(phoneNumber string, role string) (signedToken string, signedRefreshToken string, err error) {
 	claims := &SignedUserDetails{
-		Username:    username,
-		PhoneNumber: &phoneNumber,
+
+		PhoneNumber: phoneNumber,
 		Role:        role,
-		LastName:    lastName,
-		Name:        name,
-		//Uid:      uid,
+
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(24)).Unix(),
 		},
@@ -98,7 +93,7 @@ func UpdateUserAllTokens(signedToken string, signedRefreshToken string, role str
 	opt := options.UpdateOptions{
 		Upsert: &upsert,
 	}
-	_, err := userCollection.UpdateOne(
+	_, err := usersCollection.UpdateOne(
 		ctx,
 		filter,
 		bson.D{
