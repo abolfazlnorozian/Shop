@@ -47,11 +47,17 @@ func UserRoute(r *gin.RouterGroup) {
 	authUser := r.Group("/")
 	authUser.Use(middleware.UserAuthenticate())
 	authAdmin := r.Group("/")
-	//authAdmin.Use(middleware.AdminAuthenticate())
+	authAdmin.Use(middleware.AdminAuthenticate())
 
 	us.POST("/createdUser", services.RegisterUsers)
 	us.POST("/loginUser", services.LoginUsers)
 	authAdmin.GET("/users", services.GetAllUsers)
 	authUser.PUT("/updated", services.UpdatedUser)
 
+}
+func OrderRouter(r *gin.RouterGroup) {
+	or := r.Group("/")
+	or.Use(middleware.AdminAuthenticate())
+
+	or.GET("orders", services.FindordersByadmin)
 }
