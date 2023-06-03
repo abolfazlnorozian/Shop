@@ -12,7 +12,7 @@ type Order struct {
 	Status            string             `json:"status" bson:"status"`
 	PaymentStatus     string             `json:"paymentStatus" bson:"paymentStatus"`
 	TotalPrice        int                `json:"totalPrice" bson:"totalPrice"`
-	TotalDiscount     int                `json:"totalDiscount" bson:"totalDiscount"`
+	TotalDiscount     float64            `json:"totalDiscount" bson:"totalDiscount"`
 	TotalQuantity     int                `json:"totalQantity" bson:"totalQantity"`
 	PostalCost        int                `json:"postalCost" bson:"postalCost"`
 	UserId            primitive.ObjectID `json:"userId" bson:"userId"`
@@ -32,12 +32,14 @@ type Product struct {
 	Id              primitive.ObjectID `json:"_id" bson:"_id"`
 	Name            string             `json:"name" bson:"name"`
 	Price           int                `json:"price" bson:"price"`
-	DiscountPercent int                `json:"discountPercent" bson:"discountPercent"`
+	DiscountPercent float64            `json:"discountPercent" bson:"discountPercent"`
 }
 type Addrs struct {
 	Id         primitive.ObjectID `json:"_id" bson:"_id"`
-	City       string             `json:"city" bson:"city"`
-	State      string             `json:"state" bson:"state"`
 	Address    string             `json:"address" bson:"address"`
-	PostalCode int                `json:"postalCode" bson:"postalCode"`
+	City       string             `json:"city" bson:"city"`
+	Latitude   float64            `json:"latitude" bson:"latitude"`
+	Longitude  float64            `json:"longitude" bson:"longitude"`
+	PostalCode interface{}        `json:"postalCode" bson:"postalCode"`
+	State      string             `json:"state" bson:"state"`
 }
