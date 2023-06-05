@@ -69,6 +69,8 @@ func RegisterUsers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while cheking for the email"})
 		return
 	}
+	randomUsername := middleware.GenerateRandomUsername(user.PhoneNumber)
+	user.Username = &randomUsername
 
 	user.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	user.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
