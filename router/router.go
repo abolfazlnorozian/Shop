@@ -53,6 +53,7 @@ func UserRoute(r *gin.RouterGroup) {
 	us.POST("/loginUser", services.LoginUsers)
 	authAdmin.GET("/users", services.GetAllUsers)
 	authUser.PUT("/updated", services.UpdatedUser)
+	authUser.GET("/oneuser", services.GetUserByToken)
 
 }
 func OrderRouter(r *gin.RouterGroup) {

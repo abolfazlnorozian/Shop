@@ -69,6 +69,8 @@ func RegisterUsers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while cheking for the email"})
 		return
 	}
+	randomUsername := middleware.GenerateRandomUsername(user.PhoneNumber)
+	user.Username = &randomUsername
 
 	user.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	user.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
@@ -100,20 +102,20 @@ func LoginUsers(c *gin.Context) {
 
 	err := usersCollection.FindOne(ctx, bson.M{"phoneNumber": user.PhoneNumber}).Decode(&foundUser)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is incorrect"})
 		return
 	}
 	passwordIsValid, _ := related.VerifyPassword(*user.VerifyCode, *foundUser.VerifyCode)
 	defer cancle()
 	if passwordIsValid != true {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Password is incorrect"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Password or Phonenumber is incorrect"})
 		return
 	}
 	if foundUser.PhoneNumber == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "user not found"})
 	}
 
-	token, refreshToken, _ := middleware.GenerateUserAllTokens(foundUser.PhoneNumber, foundUser.Role)
+	token, refreshToken, _ := middleware.GenerateUserAllTokens(foundUser.PhoneNumber, foundUser.Role, *foundUser.Username)
 
 	middleware.UpdateUserAllTokens(token, refreshToken, foundUser.Role)
 	err = usersCollection.FindOne(ctx, bson.M{"role": foundUser.Role}).Decode(&foundUser)
@@ -162,6 +164,7 @@ func UpdatedUser(c *gin.Context) {
 	var founduser entity.Users
 
 	tokenClaims, exists := c.Get("tokenClaims")
+
 	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
 		return
@@ -245,8 +248,49 @@ func UpdatedUser(c *gin.Context) {
 	}
 }
 
-// if result.ModifiedCount == 0 {
-// 	fmt.Println(err)
-// 	c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-// 	return
-// }
+func GetUserByToken(c *gin.Context) {
+	var user entity.Users
+	tokenClaims, exists := c.Get("tokenClaims")
+
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+		return
+	}
+
+	claims, ok := tokenClaims.(*middleware.SignedUserDetails)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+		return
+	}
+
+	phone := claims.PhoneNumber
+	role := claims.Role
+	username := claims.Username
+
+	// Assuming you have a MongoDB client and collection available
+	// Replace `client` and `usersCollection` with your own client and collection objects
+	// You may need to initialize the MongoDB client and collection separately
+
+	// Create a context with a timeout
+	ctx, cancel := context.WithTimeout(c, time.Second*5)
+	defer cancel()
+
+	// Assuming `usersCollection` is your MongoDB collection
+	err := usersCollection.FindOne(ctx, bson.M{
+		"phoneNumber": phone,
+		"role":        role,
+		"username":    username,
+	}).Decode(&user)
+
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"user": user})
+}

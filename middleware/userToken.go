@@ -22,6 +22,7 @@ var SECRET_KEYS string = os.Getenv("SECRET_KEY")
 type SignedUserDetails struct {
 	PhoneNumber string
 	Role        string
+	Username    string
 
 	jwt.StandardClaims
 }
@@ -54,11 +55,12 @@ func ValidateUserToken(signedToken string) (claims *SignedUserDetails, msg strin
 
 }
 
-func GenerateUserAllTokens(phoneNumber string, role string) (signedToken string, signedRefreshToken string, err error) {
+func GenerateUserAllTokens(phoneNumber string, role string, username string) (signedToken string, signedRefreshToken string, err error) {
 	claims := &SignedUserDetails{
 
 		PhoneNumber: phoneNumber,
 		Role:        role,
+		Username:    username,
 
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(24)).Unix(),
