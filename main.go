@@ -28,6 +28,7 @@ func main() {
 	router.Downloader(v1)
 	router.UserRoute(v1)
 	router.OrderRouter(v1)
+	router.CartRouter(v1)
 
 	go func() {
 		db.MD()

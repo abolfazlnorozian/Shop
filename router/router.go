@@ -62,3 +62,9 @@ func OrderRouter(r *gin.RouterGroup) {
 
 	or.GET("orders", services.FindordersByadmin)
 }
+func CartRouter(r *gin.RouterGroup) {
+	ca := r.Group("/")
+	ca.Use(middleware.UserAuthenticate())
+
+	ca.POST("addCart", services.AddCatrs)
+}
