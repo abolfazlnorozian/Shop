@@ -14,6 +14,7 @@ import (
 )
 
 var cartCollection *mongo.Collection = db.GetCollection(db.DB, "brands")
+var prodCollection *mongo.Collection = db.GetCollection(db.DB, "products")
 
 func AddCatrs(c *gin.Context) {
 	var cart entity.Catrs
@@ -53,10 +54,11 @@ func AddCatrs(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": cart})
 
 }
-func GetCarts(c *gin.Context) {
-	var carts []entity.Catrs // Assuming the entity struct is named "Cart" instead of "Catrs"
-	tokenClaims, exists := c.Get("tokenClaims")
 
+func GetCarts(c *gin.Context) {
+	var pro []entity.Products
+
+	tokenClaims, exists := c.Get("tokenClaims")
 	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
 		return
@@ -84,13 +86,26 @@ func GetCarts(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode cart"})
 			return
 		}
-		carts = append(carts, cart)
+
+		for _, product := range cart.Products {
+			productID := product.ProductId
+
+			// Retrieve product data from "products" collection based on productID
+			var retrievedProduct entity.Products
+			err := prodCollection.FindOne(c, bson.M{"_id": productID}).Decode(&retrievedProduct)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch product"})
+				return
+			}
+
+			pro = append(pro, retrievedProduct)
+		}
 	}
 
-	if len(carts) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Carts not found"})
+	if len(pro) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Products not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"carts": carts})
+	c.JSON(http.StatusOK, gin.H{"products": pro})
 }
