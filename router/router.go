@@ -67,4 +67,5 @@ func CartRouter(r *gin.RouterGroup) {
 	ca.Use(middleware.UserAuthenticate())
 
 	ca.POST("addCart", services.AddCatrs)
+	ca.GET("/getCart", services.GetCarts)
 }
