@@ -38,6 +38,23 @@ func AddCatrs(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON data"})
 		return
 	}
+	// Check if the productId already exists in the Products array
+	existingProductIndex := -1
+	for i, product := range cart.Products {
+		if product.ProductId == cart.Products[0].ProductId {
+			existingProductIndex = i
+			break
+		}
+	}
+
+	if existingProductIndex != -1 {
+		// If productId already exists, increment the quantity by 1
+		cart.Products[existingProductIndex].Quantity++
+	} else {
+		// If productId doesn't exist, add the new product to the Products array
+		cart.Products = append(cart.Products, cart.Products[0])
+	}
+
 	cart.Id = primitive.NewObjectID()
 	cart.Status = "active"
 	cart.UserName = username
@@ -57,7 +74,6 @@ func AddCatrs(c *gin.Context) {
 		update := bson.M{"$set": bson.M{
 			"products":  existingDoc.Products,
 			"updatedAt": time.Now(),
-			"quantity":  1,
 		}}
 		_, err = cartCollection.UpdateOne(c, filter, update)
 		if err != nil {
