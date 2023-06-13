@@ -19,7 +19,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var usersCollection *mongo.Collection = db.GetCollection(db.DB, "brands")
+var usersCollection *mongo.Collection = db.GetCollection(db.DB, "brandschemas")
 var validates = validator.New()
 
 func RegisterUsers(c *gin.Context) {

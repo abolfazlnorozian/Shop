@@ -18,7 +18,7 @@ var prodCollection *mongo.Collection = db.GetCollection(db.DB, "products")
 
 func AddCatrs(c *gin.Context) {
 	var cart entity.Catrs
-	//"Token claims not found in context"
+
 	tokenClaims, exists := c.Get("tokenClaims")
 
 	if !exists {
@@ -32,27 +32,69 @@ func AddCatrs(c *gin.Context) {
 		return
 	}
 
-	// phone := claims.PhoneNumber
-	// role := claims.Role
 	username := claims.Username
 
 	if err := c.ShouldBindJSON(&cart); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "box not truth"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON data"})
 		return
 	}
+
+	cart.Id = primitive.NewObjectID()
 	cart.Status = "active"
 	cart.UserName = username
-	cart.Id = primitive.NewObjectID()
-	cart.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	cart.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	if _, err := cartCollection.InsertOne(c, cart); err != nil {
+
+	cart.CreatedAt = time.Now()
+	cart.UpdatedAt = time.Now()
+
+	// Check if a document with the same username exists
+	filter := bson.M{"username": username}
+	var existingDoc entity.Catrs
+	err := cartCollection.FindOne(c, filter).Decode(&existingDoc)
+	if err == nil {
+		// If an existing document is found, check if the productId already exists in the Products array
+		existingProductIndex := -1
+		for i, product := range existingDoc.Products {
+			if product.ProductId == cart.Products[0].ProductId {
+				existingProductIndex = i
+				break
+			}
+		}
+
+		if existingProductIndex != -1 {
+			// If productId already exists, increment the quantity by 1
+			existingDoc.Products[existingProductIndex].Quantity++
+		} else {
+			// If productId doesn't exist, add the new product to the Products array with quantity 1
+			cart.Products[0].Quantity = 1
+			existingDoc.Products = append(existingDoc.Products, cart.Products[0])
+		}
+
+		// Update the existing document in the database
+		update := bson.M{"$set": bson.M{
+			"products":  existingDoc.Products,
+			"updatedAt": time.Now(),
+		}}
+		_, err = cartCollection.UpdateOne(c, filter, update)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": existingDoc})
+		return
+	}
+
+	// If no existing document found, create a new one with the first product and quantity 1
+	cart.Products[0].Quantity = 1
+
+	// Insert the new document into the database
+	_, err = cartCollection.InsertOne(c, cart)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
-
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": cart})
-
 }
 
 func GetCarts(c *gin.Context) {
