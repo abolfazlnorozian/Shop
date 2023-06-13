@@ -68,4 +68,5 @@ func CartRouter(r *gin.RouterGroup) {
 
 	ca.POST("addCart", services.AddCatrs)
 	ca.GET("/getCart", services.GetCarts)
+	ca.DELETE("/deletedCart", services.DeleteCart)
 }
