@@ -38,22 +38,6 @@ func AddCatrs(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON data"})
 		return
 	}
-	// Check if the productId already exists in the Products array
-	existingProductIndex := -1
-	for i, product := range cart.Products {
-		if product.ProductId == cart.Products[0].ProductId {
-			existingProductIndex = i
-			break
-		}
-	}
-
-	if existingProductIndex != -1 {
-		// If productId already exists, increment the quantity by 1
-		cart.Products[existingProductIndex].Quantity++
-	} else {
-		// If productId doesn't exist, add the new product to the Products array
-		cart.Products = append(cart.Products, cart.Products[0])
-	}
 
 	cart.Id = primitive.NewObjectID()
 	cart.Status = "active"
@@ -67,8 +51,23 @@ func AddCatrs(c *gin.Context) {
 	var existingDoc entity.Catrs
 	err := cartCollection.FindOne(c, filter).Decode(&existingDoc)
 	if err == nil {
-		// If an existing document found, append the new product to the Products array
-		existingDoc.Products = append(existingDoc.Products, cart.Products[0])
+		// If an existing document is found, check if the productId already exists in the Products array
+		existingProductIndex := -1
+		for i, product := range existingDoc.Products {
+			if product.ProductId == cart.Products[0].ProductId {
+				existingProductIndex = i
+				break
+			}
+		}
+
+		if existingProductIndex != -1 {
+			// If productId already exists, increment the quantity by 1
+			existingDoc.Products[existingProductIndex].Quantity++
+		} else {
+			// If productId doesn't exist, add the new product to the Products array with quantity 1
+			cart.Products[0].Quantity = 1
+			existingDoc.Products = append(existingDoc.Products, cart.Products[0])
+		}
 
 		// Update the existing document in the database
 		update := bson.M{"$set": bson.M{
@@ -85,8 +84,8 @@ func AddCatrs(c *gin.Context) {
 		return
 	}
 
-	// If no existing document found, create a new one
-	cart.Products = []entity.ComeProduct{cart.Products[0]}
+	// If no existing document found, create a new one with the first product and quantity 1
+	cart.Products[0].Quantity = 1
 
 	// Insert the new document into the database
 	_, err = cartCollection.InsertOne(c, cart)
