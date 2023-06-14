@@ -108,11 +108,11 @@ func LoginUsers(c *gin.Context) {
 	passwordIsValid, _ := related.VerifyPassword(*user.VerifyCode, *foundUser.VerifyCode)
 	defer cancle()
 	if passwordIsValid != true {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Password or Phonenumber is incorrect"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Password  is incorrect"})
 		return
 	}
-	if foundUser.PhoneNumber == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "user not found"})
+	if foundUser.PhoneNumber == "" || user.PhoneNumber != foundUser.PhoneNumber {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "phoneNumber is incorrect"})
 	}
 
 	token, refreshToken, _ := middleware.GenerateUserAllTokens(foundUser.PhoneNumber, foundUser.Role, *foundUser.Username)
