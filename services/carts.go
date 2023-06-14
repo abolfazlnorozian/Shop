@@ -151,3 +151,75 @@ func GetCarts(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"products": pro})
 }
+
+func DeleteCart(c *gin.Context) {
+	var cart entity.Catrs
+
+	tokenClaims, exists := c.Get("tokenClaims")
+
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+		return
+	}
+
+	claims, ok := tokenClaims.(*middleware.SignedUserDetails)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+		return
+	}
+
+	username := claims.Username
+	if err := c.ShouldBindJSON(&cart); err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": err.Error()})
+		return
+	}
+
+	filter := bson.M{"username": username}
+	var existingDoc entity.Catrs
+	err := cartCollection.FindOne(c, filter).Decode(&existingDoc)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+
+	existingProductIndex := -1
+	for i, product := range existingDoc.Products {
+		if product.ProductId == cart.Products[0].ProductId {
+			existingProductIndex = i
+			break
+		}
+	}
+
+	if existingProductIndex != -1 {
+		// If productId already exists, decrement the quantity by 1
+		existingDoc.Products[existingProductIndex].Quantity--
+		if existingDoc.Products[existingProductIndex].Quantity == 0 {
+			// If quantity reaches zero, remove the product from the Products array
+			existingDoc.Products = append(existingDoc.Products[:existingProductIndex], existingDoc.Products[existingProductIndex+1:]...)
+		}
+	}
+
+	// Update the existing document in the database
+	update := bson.M{"$set": bson.M{
+		"products":  existingDoc.Products,
+		"updatedAt": time.Now(),
+	}}
+	_, err = cartCollection.UpdateOne(c, filter, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+
+	// If no products remaining, delete the document from the database
+	if len(existingDoc.Products) == 0 {
+		_, err = cartCollection.DeleteOne(c, filter)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Document deleted"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": existingDoc})
+}
