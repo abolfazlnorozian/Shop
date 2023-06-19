@@ -58,9 +58,12 @@ func UserRoute(r *gin.RouterGroup) {
 }
 func OrderRouter(r *gin.RouterGroup) {
 	or := r.Group("/")
+	ordr := r.Group("/")
 	or.Use(middleware.AdminAuthenticate())
+	ordr.Use(middleware.UserAuthenticate())
 
 	or.GET("orders", services.FindordersByadmin)
+	ordr.POST("addorder", services.AddOrder)
 }
 func CartRouter(r *gin.RouterGroup) {
 	ca := r.Group("/")

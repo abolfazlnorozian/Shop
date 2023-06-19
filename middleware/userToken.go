@@ -20,6 +20,7 @@ var usersCollection *mongo.Collection = db.GetCollection(db.DB, "users")
 var SECRET_KEYS string = os.Getenv("SECRET_KEY")
 
 type SignedUserDetails struct {
+	Id          primitive.ObjectID
 	PhoneNumber string
 	Role        string
 	Username    string
@@ -55,8 +56,9 @@ func ValidateUserToken(signedToken string) (claims *SignedUserDetails, msg strin
 
 }
 
-func GenerateUserAllTokens(phoneNumber string, role string, username string) (signedToken string, signedRefreshToken string, err error) {
+func GenerateUserAllTokens(id primitive.ObjectID, phoneNumber string, role string, username string) (signedToken string, signedRefreshToken string, err error) {
 	claims := &SignedUserDetails{
+		Id: id,
 
 		PhoneNumber: phoneNumber,
 		Role:        role,

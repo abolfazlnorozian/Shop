@@ -7,7 +7,7 @@ import (
 )
 
 type Order struct {
-	Id                int                `json:"_id" bson:"_id"`
+	Id                int                `json:"_id,omitempty" bson:"_id,omitempty"`
 	StartDate         time.Time          `json:"startDate" bson:"startDate"`
 	Status            string             `json:"status" bson:"status"`
 	PaymentStatus     string             `json:"paymentStatus" bson:"paymentStatus"`

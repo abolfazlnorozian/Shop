@@ -15,6 +15,7 @@ import (
 
 var ordersCollection *mongo.Collection = db.GetCollection(db.DB, "pages")
 var brandCollection *mongo.Collection = db.GetCollection(db.DB, "brands")
+var produCollection *mongo.Collection = db.GetCollection(db.DB, "products")
 
 func FindordersByadmin(c *gin.Context) {
 	if err := middleware.CheckUserType(c, "admin"); err != nil {
@@ -51,7 +52,7 @@ func FindordersByadmin(c *gin.Context) {
 
 func AddOrder(c *gin.Context) {
 	var order entity.Order
-	var pro []entity.Products
+	//var pro []entity.Product
 
 	tokenClaims, exists := c.Get("tokenClaims")
 	if !exists {
@@ -66,11 +67,13 @@ func AddOrder(c *gin.Context) {
 	}
 
 	username := claims.Username
+	id := claims.Id
 	if err := c.ShouldBindJSON(&order); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "order not truth"})
 		return
 	}
-	//order.Id=int(primitive.NewObjectID()[bson.TypeInt32])
+	// orderID := related.GenerateUniqueID()
+	// order.Id = orderID
 	order.StartDate = time.Now()
 	order.Status = ""
 	order.PaymentId = ""
@@ -81,13 +84,13 @@ func AddOrder(c *gin.Context) {
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
 	order.V = 0
-	if _, err := ordersCollection.InsertOne(c, bson.M{"userId": username}); err != nil {
+	if _, err := ordersCollection.InsertOne(c, bson.M{"userId": id}); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 
 	}
 
-	cur, err := cartCollection.Find(c, bson.M{"username": username})
+	cur, err := brandCollection.Find(c, bson.M{"username": username})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch carts"})
 		return
@@ -104,17 +107,36 @@ func AddOrder(c *gin.Context) {
 
 		for _, product := range cart.Products {
 			productID := product.ProductId
+			productQuantity := product.Quantity
 
 			// Retrieve product data from "products" collection based on productID
 			var retrievedProduct entity.Products
-			err := prodCollection.FindOne(c, bson.M{"_id": productID}).Decode(&retrievedProduct)
+			err := produCollection.FindOne(c, bson.M{"_id": productID}).Decode(&retrievedProduct)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch product"})
 				return
 			}
 
-			pro = append(pro, retrievedProduct)
+			// Extracting specific fields from retrievedProduct and creating a new Product object
+			orderProduct := entity.Product{
+				Quantity: productQuantity,
+				Id:       retrievedProduct.ID,
+				Name:     retrievedProduct.Name,
+				Price:    retrievedProduct.Price,
+			}
+
+			order.Products = append(order.Products, orderProduct)
 		}
 	}
+
+	// Insert order into the "orders" collection
+	_, err = ordersCollection.InsertOne(c, order)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Send the response to Postman
+	c.JSON(http.StatusOK, gin.H{"message": order})
 
 }
