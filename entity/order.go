@@ -18,9 +18,9 @@ type Order struct {
 	UserId            primitive.ObjectID `json:"userId" bson:"userId"`
 	Products          []Product          `json:"products" bson:"products"`
 	JStartDate        string             `json:"jStartDate" bson:"jSatrtDate"`
-	Address           Addrs              `json:"address" bson:"address"`
-	Create            time.Time          `json:"createdAt" bson:"createdAt"`
-	Update            time.Time          `json:"updatedAt" bson:"updatedAt"`
+	Address           Addrs              `json:"address" bson:"address" validate:"required"`
+	CreatedAt         time.Time          `json:"createdAt" bson:"createdAt"`
+	UpdatedAt         time.Time          `json:"updatedAt" bson:"updatedAt"`
 	V                 int                `json:"__v" bson:"__v"`
 	PaymentId         string             `json:"paymentId" bson:"paymentId"`
 	PostalTrakingCode string             `json:"postalTrakingCode" bson:"postalTrakingCode"`

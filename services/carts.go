@@ -15,6 +15,7 @@ import (
 
 var cartCollection *mongo.Collection = db.GetCollection(db.DB, "brands")
 var prodCollection *mongo.Collection = db.GetCollection(db.DB, "products")
+var caCollection *mongo.Collection = db.GetCollection(db.DB, "brandschemas")
 
 func AddCatrs(c *gin.Context) {
 	var cart entity.Catrs
@@ -145,7 +146,7 @@ func GetCarts(c *gin.Context) {
 	}
 
 	if len(pro) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Products not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
