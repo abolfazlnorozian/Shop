@@ -67,28 +67,42 @@ func AddOrder(c *gin.Context) {
 	}
 
 	username := claims.Username
-	id := claims.Id
+	//id := claims.Id
 	if err := c.ShouldBindJSON(&order); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "order not truth"})
 		return
 	}
-	// orderID := related.GenerateUniqueID()
-	// order.Id = orderID
+	// Get the next order ID from the counters collection
+	// counter := entity.Counter{}
+	// err := ordersCollection.FindOneAndUpdate(
+	// 	c,
+	// 	bson.M{"_id": "order_counter"},
+	// 	bson.M{"$inc": bson.M{"order_id": 1}},
+	// 	options.FindOneAndUpdate().SetReturnDocument(options.After),
+	// ).Decode(&counter)
+
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	// 	return
+	// }
+
+	//order.Id = counter.OrderID
 	order.StartDate = time.Now()
 	order.Status = ""
 	order.PaymentId = ""
 	order.TotalPrice = 0
+
 	order.TotalDiscount = 0
-	order.TotalQuantity = 0
+
 	order.PostalCost = 0
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
 	order.V = 0
-	if _, err := ordersCollection.InsertOne(c, bson.M{"userId": id}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-		return
+	// if _, err := ordersCollection.InsertOne(c, bson.M{"userId": id}); err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+	// 	return
 
-	}
+	// }
 
 	cur, err := brandCollection.Find(c, bson.M{"username": username})
 	if err != nil {
@@ -126,6 +140,9 @@ func AddOrder(c *gin.Context) {
 			}
 
 			order.Products = append(order.Products, orderProduct)
+			order.TotalQuantity += productQuantity
+			order.TotalPrice += retrievedProduct.Price
+
 		}
 	}
 

@@ -7,13 +7,13 @@ import (
 )
 
 type Order struct {
-	Id                int                `json:"_id,omitempty" bson:"_id,omitempty"`
+	Id                int                `json:"_id" bson:"_id,omitempty"`
 	StartDate         time.Time          `json:"startDate" bson:"startDate"`
 	Status            string             `json:"status" bson:"status"`
 	PaymentStatus     string             `json:"paymentStatus" bson:"paymentStatus"`
 	TotalPrice        int                `json:"totalPrice" bson:"totalPrice"`
 	TotalDiscount     float64            `json:"totalDiscount" bson:"totalDiscount"`
-	TotalQuantity     int                `json:"totalQantity" bson:"totalQantity"`
+	TotalQuantity     int                `json:"totalQuantity" bson:"totalQuantity"`
 	PostalCost        int                `json:"postalCost" bson:"postalCost"`
 	UserId            primitive.ObjectID `json:"userId" bson:"userId"`
 	Products          []Product          `json:"products" bson:"products"`
