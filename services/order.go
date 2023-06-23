@@ -11,11 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var ordersCollection *mongo.Collection = db.GetCollection(db.DB, "pages")
 var brandCollection *mongo.Collection = db.GetCollection(db.DB, "brands")
 var produCollection *mongo.Collection = db.GetCollection(db.DB, "products")
+var countersCollection *mongo.Collection = db.GetCollection(db.DB, "counters")
 
 func FindordersByadmin(c *gin.Context) {
 	if err := middleware.CheckUserType(c, "admin"); err != nil {
@@ -67,30 +69,32 @@ func AddOrder(c *gin.Context) {
 	}
 
 	username := claims.Username
-	//id := claims.Id
+	id := claims.Id
 	if err := c.ShouldBindJSON(&order); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "order not truth"})
 		return
 	}
-	// Get the next order ID from the counters collection
-	// counter := entity.Counter{}
-	// err := ordersCollection.FindOneAndUpdate(
-	// 	c,
-	// 	bson.M{"_id": "order_counter"},
-	// 	bson.M{"$inc": bson.M{"order_id": 1}},
-	// 	options.FindOneAndUpdate().SetReturnDocument(options.After),
-	// ).Decode(&counter)
+	counter := struct {
+		NextID int `bson:"next_id"`
+	}{}
+	err := countersCollection.FindOneAndUpdate(
+		c,
+		bson.M{"_id": "order_counter"},
+		bson.M{"$inc": bson.M{"next_id": 1}},
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	).Decode(&counter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate ID"})
+		return
+	}
 
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 	return
-	// }
+	order.Id = counter.NextID
 
-	//order.Id = counter.OrderID
 	order.StartDate = time.Now()
-	order.Status = ""
+	order.Status = "none"
 	order.PaymentId = ""
 	order.TotalPrice = 0
+	order.UserId = id
 
 	order.TotalDiscount = 0
 
