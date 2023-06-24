@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -54,7 +55,6 @@ func FindordersByadmin(c *gin.Context) {
 
 func AddOrder(c *gin.Context) {
 	var order entity.Order
-	//var pro []entity.Product
 
 	tokenClaims, exists := c.Get("tokenClaims")
 	if !exists {
@@ -89,11 +89,12 @@ func AddOrder(c *gin.Context) {
 	}
 
 	order.Id = counter.NextID
+	order.Address.Id = primitive.NewObjectID()
 
 	order.StartDate = time.Now()
 	order.Status = "none"
 	order.PaymentId = ""
-	order.TotalPrice = 0
+
 	order.UserId = id
 
 	order.TotalDiscount = 0

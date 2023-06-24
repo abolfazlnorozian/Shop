@@ -18,7 +18,7 @@ type Order struct {
 	UserId            primitive.ObjectID `json:"userId" bson:"userId"`
 	Products          []Product          `json:"products" bson:"products"`
 	JStartDate        string             `json:"jStartDate" bson:"jSatrtDate"`
-	Address           Addrs              `json:"address" bson:"address" validate:"required"`
+	Address           Addrs              `json:"address" bson:"address" binding:"required"`
 	CreatedAt         time.Time          `json:"createdAt" bson:"createdAt"`
 	UpdatedAt         time.Time          `json:"updatedAt" bson:"updatedAt"`
 	V                 int                `json:"__v" bson:"__v"`
@@ -35,11 +35,11 @@ type Product struct {
 	DiscountPercent float64            `json:"discountPercent" bson:"discountPercent"`
 }
 type Addrs struct {
-	Id         primitive.ObjectID `json:"_id" bson:"_id"`
-	Address    string             `json:"address" bson:"address"`
-	City       string             `json:"city" bson:"city"`
+	Id         primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	Address    string             `json:"address" bson:"address" binding:"required"`
+	City       string             `json:"city" bson:"city" binding:"required"`
 	Latitude   float64            `json:"latitude" bson:"latitude"`
 	Longitude  float64            `json:"longitude" bson:"longitude"`
-	PostalCode interface{}        `json:"postalCode" bson:"postalCode"`
-	State      string             `json:"state" bson:"state"`
+	PostalCode interface{}        `json:"postalCode" bson:"postalCode" binding:"required"`
+	State      string             `json:"state" bson:"state" binding:"required"`
 }
