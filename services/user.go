@@ -115,7 +115,7 @@ func LoginUsers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "phoneNumber is incorrect"})
 	}
 
-	token, refreshToken, _ := middleware.GenerateUserAllTokens(foundUser.PhoneNumber, foundUser.Role, *foundUser.Username)
+	token, refreshToken, _ := middleware.GenerateUserAllTokens(foundUser.Id, foundUser.PhoneNumber, foundUser.Role, *foundUser.Username)
 
 	middleware.UpdateUserAllTokens(token, refreshToken, foundUser.Role)
 	err = usersCollection.FindOne(ctx, bson.M{"role": foundUser.Role}).Decode(&foundUser)

@@ -9,7 +9,7 @@ import (
 )
 
 type Products struct {
-	ID              *primitive.ObjectID  `json:"_id" bson:"_id,omitempty"`
+	ID              primitive.ObjectID   `json:"_id" bson:"_id,omitempty"`
 	Amazing         bool                 `json:"amazing" bson:"amazing"`
 	IsMillModel     bool                 `json:"isMillModel" bson:"isMillModel"`
 	ProductType     string               `json:"productType" bson:"productType"`
