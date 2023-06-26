@@ -3,7 +3,8 @@ package main
 import (
 	"log"
 	"os"
-	"shop/db"
+	"shop/database"
+
 	"shop/router"
 
 	"github.com/gin-gonic/gin"
@@ -31,7 +32,7 @@ func main() {
 	router.CartRouter(v1)
 
 	go func() {
-		db.MD()
+		database.MD()
 
 	}()
 

@@ -1,11 +1,12 @@
-package middleware
+package auth
 
 import (
 	"context"
 	"fmt"
 	"log"
 	"os"
-	"shop/db"
+	"shop/database"
+
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -13,25 +14,45 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/crypto/bcrypt"
 )
 
-var usersCollection *mongo.Collection = db.GetCollection(db.DB, "users")
+var userCollection *mongo.Collection = database.GetCollection(database.DB, "admins")
 
-var SECRET_KEYS string = os.Getenv("SECRET_KEY")
+var SECRET_KEY string = os.Getenv("SECRET_KEY")
 
-type SignedUserDetails struct {
-	Id          primitive.ObjectID
-	PhoneNumber string
-	Role        string
-	Username    string
-
+type SignedDetails struct {
+	Username string
+	Role     string
+	Uid      string
 	jwt.StandardClaims
 }
 
-func ValidateUserToken(signedToken string) (claims *SignedUserDetails, msg string) {
+func HashPassword(password string) string {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	if err != nil {
+		log.Panic(err)
+	}
+	return string(bytes)
+
+}
+
+func VerifyPassword(userPassword string, providedPassword string) (bool, string) {
+	err := bcrypt.CompareHashAndPassword([]byte(providedPassword), []byte(userPassword))
+	check := true
+	msg := ""
+	if err != nil {
+		msg = fmt.Sprintf("email of password is incorrect")
+		check = false
+	}
+	return check, msg
+
+}
+
+func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
 	token, err := jwt.ParseWithClaims(
 		signedToken,
-		&SignedUserDetails{},
+		&SignedDetails{},
 		func(token *jwt.Token) (interface{}, error) {
 			return []byte(SECRET_KEY), nil
 
@@ -41,7 +62,7 @@ func ValidateUserToken(signedToken string) (claims *SignedUserDetails, msg strin
 		msg = err.Error()
 		return
 	}
-	claims, ok := token.Claims.(*SignedUserDetails)
+	claims, ok := token.Claims.(*SignedDetails)
 	if !ok {
 		msg = fmt.Sprintf("the token is invalid")
 		msg = err.Error()
@@ -56,26 +77,23 @@ func ValidateUserToken(signedToken string) (claims *SignedUserDetails, msg strin
 
 }
 
-func GenerateUserAllTokens(id primitive.ObjectID, phoneNumber string, role string, username string) (signedToken string, signedRefreshToken string, err error) {
-	claims := &SignedUserDetails{
-		Id: id,
-
-		PhoneNumber: phoneNumber,
-		Role:        role,
-		Username:    username,
-
+func GenerateAllTokens(username string, role string) (signedToken string, signedRefreshToken string, err error) {
+	claims := &SignedDetails{
+		Username: username,
+		Role:     role,
+		//Uid:      uid,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(24)).Unix(),
 		},
 	}
-	refreshClaims := &SignedUserDetails{
+	refreshClaims := &SignedDetails{
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(168)).Unix(),
 		},
 	}
 
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(SECRET_KEYS))
-	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(SECRET_KEYS))
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(SECRET_KEY))
+	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(SECRET_KEY))
 	if err != nil {
 		log.Panic(err)
 		return
@@ -84,7 +102,7 @@ func GenerateUserAllTokens(id primitive.ObjectID, phoneNumber string, role strin
 	return token, refreshToken, err
 }
 
-func UpdateUserAllTokens(signedToken string, signedRefreshToken string, role string) {
+func UpdateAllTokens(signedToken string, signedRefreshToken string, role string) {
 	var ctx, cancle = context.WithTimeout(context.Background(), 100*time.Second)
 	var updateObj primitive.D
 	//append token and refreshtoken in update object
@@ -97,7 +115,7 @@ func UpdateUserAllTokens(signedToken string, signedRefreshToken string, role str
 	opt := options.UpdateOptions{
 		Upsert: &upsert,
 	}
-	_, err := usersCollection.UpdateOne(
+	_, err := userCollection.UpdateOne(
 		ctx,
 		filter,
 		bson.D{

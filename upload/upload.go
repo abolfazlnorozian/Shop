@@ -7,9 +7,9 @@ import (
 	"math"
 	"net/http"
 	"os"
-	"shop/db"
-	"shop/entity"
-	"shop/middleware"
+	"shop/auth"
+	"shop/database"
+	"shop/entities"
 	"shop/response"
 	"time"
 
@@ -19,10 +19,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var imgCollection *mongo.Collection = db.GetCollection(db.DB, "uploadschemas")
+var imgCollection *mongo.Collection = database.GetCollection(database.DB, "uploadschemas")
 
 func Uploadpath(ctx *gin.Context) {
-	if err := middleware.CheckUserType(ctx, "admin"); err != nil {
+	if err := auth.CheckUserType(ctx, "admin"); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -47,7 +47,7 @@ func Uploadpath(ctx *gin.Context) {
 	}
 
 	filepath := "uploads/" + filename
-	var img entity.Images
+	var img entities.Images
 	if err := ctx.Bind(&img); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -67,12 +67,12 @@ func Uploadpath(ctx *gin.Context) {
 }
 
 func FindAllImages(c *gin.Context) {
-	if err := middleware.CheckUserType(c, "admin"); err != nil {
+	if err := auth.CheckUserType(c, "admin"); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	var img []entity.Images
+	var img []entities.Images
 
 	//defer cancel()
 
@@ -95,7 +95,7 @@ func FindAllImages(c *gin.Context) {
 
 	//results.Close(ctx)
 	for results.Next(c) {
-		var image entity.Images
+		var image entities.Images
 		err := results.Decode(&image)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})

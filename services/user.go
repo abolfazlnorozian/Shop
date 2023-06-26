@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"shop/db"
-	"shop/entity"
-	"shop/middleware"
-	"shop/related"
+	"shop/auth"
+	"shop/database"
+	"shop/entities"
+	"shop/helpers"
 	"shop/response"
 	"time"
 
@@ -19,13 +19,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var usersCollection *mongo.Collection = db.GetCollection(db.DB, "brandschemas")
+var usersCollection *mongo.Collection = database.GetCollection(database.DB, "brandschemas")
 var validates = validator.New()
 
 func RegisterUsers(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-	var user entity.Users
+	var user entities.Users
 
 	if err := c.Bind(&user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "not found"})
@@ -37,9 +37,9 @@ func RegisterUsers(c *gin.Context) {
 		return
 	}
 
-	newVerifycode := middleware.GenerateRandomCode(4)
+	newVerifycode := helpers.GenerateRandomCode(4)
 	fmt.Println(newVerifycode)
-	hashedCode, err := related.HashPassword(newVerifycode)
+	hashedCode, err := helpers.HashPassword(newVerifycode)
 	fmt.Println(hashedCode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate verify code"})
@@ -69,7 +69,7 @@ func RegisterUsers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while cheking for the email"})
 		return
 	}
-	randomUsername := middleware.GenerateRandomUsername(user.PhoneNumber)
+	randomUsername := helpers.GenerateRandomUsername(user.PhoneNumber)
 	user.Username = &randomUsername
 
 	user.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
@@ -92,8 +92,8 @@ func LoginUsers(c *gin.Context) {
 	var ctx, cancle = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancle()
 
-	var user entity.Users
-	var foundUser entity.Users
+	var user entities.Users
+	var foundUser entities.Users
 
 	if err := c.Bind(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
@@ -105,7 +105,7 @@ func LoginUsers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is incorrect"})
 		return
 	}
-	passwordIsValid, _ := related.VerifyPassword(*user.VerifyCode, *foundUser.VerifyCode)
+	passwordIsValid, _ := helpers.VerifyPassword(*user.VerifyCode, *foundUser.VerifyCode)
 	defer cancle()
 	if passwordIsValid != true {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Password  is incorrect"})
@@ -115,9 +115,9 @@ func LoginUsers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "phoneNumber is incorrect"})
 	}
 
-	token, refreshToken, _ := middleware.GenerateUserAllTokens(foundUser.Id, foundUser.PhoneNumber, foundUser.Role, *foundUser.Username)
+	token, refreshToken, _ := auth.GenerateUserAllTokens(foundUser.Id, foundUser.PhoneNumber, foundUser.Role, *foundUser.Username)
 
-	middleware.UpdateUserAllTokens(token, refreshToken, foundUser.Role)
+	auth.UpdateUserAllTokens(token, refreshToken, foundUser.Role)
 	err = usersCollection.FindOne(ctx, bson.M{"role": foundUser.Role}).Decode(&foundUser)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -128,14 +128,14 @@ func LoginUsers(c *gin.Context) {
 }
 
 func GetAllUsers(c *gin.Context) {
-	if err := middleware.CheckUserType(c, "admin"); err != nil {
+	if err := auth.CheckUserType(c, "admin"); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	var users []entity.Users
+	var users []entities.Users
 	defer cancel()
 
 	results, err := usersCollection.Find(ctx, bson.M{})
@@ -145,7 +145,7 @@ func GetAllUsers(c *gin.Context) {
 	}
 	//results.Close(ctx)
 	for results.Next(ctx) {
-		var user entity.Users
+		var user entities.Users
 		err := results.Decode(&user)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
@@ -160,8 +160,8 @@ func GetAllUsers(c *gin.Context) {
 }
 
 func UpdatedUser(c *gin.Context) {
-	var user entity.Users
-	var founduser entity.Users
+	var user entities.Users
+	var founduser entities.Users
 
 	tokenClaims, exists := c.Get("tokenClaims")
 
@@ -170,7 +170,7 @@ func UpdatedUser(c *gin.Context) {
 		return
 	}
 
-	claims, ok := tokenClaims.(*middleware.SignedUserDetails)
+	claims, ok := tokenClaims.(*auth.SignedUserDetails)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
 		return
@@ -249,7 +249,7 @@ func UpdatedUser(c *gin.Context) {
 }
 
 func GetUserByToken(c *gin.Context) {
-	var user entity.Users
+	var user entities.Users
 	tokenClaims, exists := c.Get("tokenClaims")
 
 	if !exists {
@@ -257,7 +257,7 @@ func GetUserByToken(c *gin.Context) {
 		return
 	}
 
-	claims, ok := tokenClaims.(*middleware.SignedUserDetails)
+	claims, ok := tokenClaims.(*auth.SignedUserDetails)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
 		return
