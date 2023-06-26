@@ -1,4 +1,4 @@
-package entity
+package entities
 
 type Counter struct {
 	ID      string `bson:"_id"`

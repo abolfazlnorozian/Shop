@@ -2,9 +2,9 @@ package services
 
 import (
 	"net/http"
-	"shop/db"
-	"shop/entity"
-	"shop/middleware"
+	"shop/auth"
+	"shop/database"
+	"shop/entities"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,12 +13,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var cartCollection *mongo.Collection = db.GetCollection(db.DB, "brands")
-var prodCollection *mongo.Collection = db.GetCollection(db.DB, "products")
-var caCollection *mongo.Collection = db.GetCollection(db.DB, "brandschemas")
+var cartCollection *mongo.Collection = database.GetCollection(database.DB, "brands")
+var prodCollection *mongo.Collection = database.GetCollection(database.DB, "products")
+var caCollection *mongo.Collection = database.GetCollection(database.DB, "brandschemas")
 
 func AddCatrs(c *gin.Context) {
-	var cart entity.Catrs
+	var cart entities.Catrs
 
 	tokenClaims, exists := c.Get("tokenClaims")
 
@@ -27,7 +27,7 @@ func AddCatrs(c *gin.Context) {
 		return
 	}
 
-	claims, ok := tokenClaims.(*middleware.SignedUserDetails)
+	claims, ok := tokenClaims.(*auth.SignedUserDetails)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
 		return
@@ -49,7 +49,7 @@ func AddCatrs(c *gin.Context) {
 
 	// Check if a document with the same username exists
 	filter := bson.M{"username": username}
-	var existingDoc entity.Catrs
+	var existingDoc entities.Catrs
 	err := cartCollection.FindOne(c, filter).Decode(&existingDoc)
 	if err == nil {
 		// If an existing document is found, check if the productId already exists in the Products array
@@ -99,7 +99,7 @@ func AddCatrs(c *gin.Context) {
 }
 
 func GetCarts(c *gin.Context) {
-	var pro []entity.Products
+	var pro []entities.Products
 
 	tokenClaims, exists := c.Get("tokenClaims")
 	if !exists {
@@ -107,7 +107,7 @@ func GetCarts(c *gin.Context) {
 		return
 	}
 
-	claims, ok := tokenClaims.(*middleware.SignedUserDetails)
+	claims, ok := tokenClaims.(*auth.SignedUserDetails)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
 		return
@@ -123,7 +123,7 @@ func GetCarts(c *gin.Context) {
 	defer cur.Close(c)
 
 	for cur.Next(c) {
-		var cart entity.Catrs
+		var cart entities.Catrs
 		err := cur.Decode(&cart)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode cart"})
@@ -134,7 +134,7 @@ func GetCarts(c *gin.Context) {
 			productID := product.ProductId
 
 			// Retrieve product data from "products" collection based on productID
-			var retrievedProduct entity.Products
+			var retrievedProduct entities.Products
 			err := prodCollection.FindOne(c, bson.M{"_id": productID}).Decode(&retrievedProduct)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch product"})
@@ -154,7 +154,7 @@ func GetCarts(c *gin.Context) {
 }
 
 func DeleteCart(c *gin.Context) {
-	var cart entity.Catrs
+	var cart entities.Catrs
 
 	tokenClaims, exists := c.Get("tokenClaims")
 
@@ -163,7 +163,7 @@ func DeleteCart(c *gin.Context) {
 		return
 	}
 
-	claims, ok := tokenClaims.(*middleware.SignedUserDetails)
+	claims, ok := tokenClaims.(*auth.SignedUserDetails)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
 		return
@@ -176,7 +176,7 @@ func DeleteCart(c *gin.Context) {
 	}
 
 	filter := bson.M{"username": username}
-	var existingDoc entity.Catrs
+	var existingDoc entities.Catrs
 	err := cartCollection.FindOne(c, filter).Decode(&existingDoc)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})

@@ -2,9 +2,9 @@ package services
 
 import (
 	"net/http"
-	"shop/db"
-	"shop/entity"
-	"shop/middleware"
+	"shop/auth"
+	"shop/database"
+	"shop/entities"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,12 +12,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var categoryCollection *mongo.Collection = db.GetCollection(db.DB, "categories")
+var categoryCollection *mongo.Collection = database.GetCollection(database.DB, "categories")
 
 func FindAllCategories(c *gin.Context) {
 
-	var categories []entity.Category
-	var result []*entity.Response
+	var categories []entities.Category
+	var result []*entities.Response
 
 	results, err := categoryCollection.Find(c, bson.D{{}})
 	if err != nil {
@@ -27,7 +27,7 @@ func FindAllCategories(c *gin.Context) {
 
 	for results.Next(c) {
 
-		var title entity.Category
+		var title entities.Category
 
 		err = results.Decode(&title)
 		if err != nil {
@@ -41,7 +41,7 @@ func FindAllCategories(c *gin.Context) {
 	}
 
 	for _, val := range categories {
-		res := &entity.Response{
+		res := &entities.Response{
 			ID:        *val.ID,
 			Images:    val.Images,
 			Name:      val.Name,
@@ -69,8 +69,8 @@ func FindAllCategories(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": result})
 }
-func findById(root *entity.Response, id primitive.ObjectID) *entity.Response {
-	queue := make([]*entity.Response, 0)
+func findById(root *entities.Response, id primitive.ObjectID) *entities.Response {
+	queue := make([]*entities.Response, 0)
 	queue = append(queue, root)
 	for len(queue) > 0 {
 		nextUp := queue[0]
@@ -89,13 +89,13 @@ func findById(root *entity.Response, id primitive.ObjectID) *entity.Response {
 
 func AddCategories(c *gin.Context) {
 
-	var title entity.Category
+	var title entities.Category
 
 	if err := c.ShouldBindJSON(&title); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := middleware.CheckUserType(c, "admin"); err != nil {
+	if err := auth.CheckUserType(c, "admin"); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

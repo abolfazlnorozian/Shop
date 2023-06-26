@@ -1,7 +1,7 @@
 package router
 
 import (
-	"shop/middleware"
+	"shop/auth"
 	"shop/services"
 	"shop/upload"
 
@@ -11,7 +11,7 @@ import (
 func ProRouter(r *gin.RouterGroup) {
 	pro := r.Group("/")
 	au := r.Group("/")
-	au.Use(middleware.AdminAuthenticate())
+	au.Use(auth.AdminAuthenticate())
 	au.GET("/products", services.FindAllProducts)
 	au.POST("/addproduct", services.AddProduct())
 	pro.GET("/getProduct/:slug", services.GetProductBySlug)
@@ -20,7 +20,8 @@ func ProRouter(r *gin.RouterGroup) {
 func CategoryRouter(r *gin.RouterGroup) {
 	c := r.Group("/")
 	ca := r.Group("/")
-	ca.Use(middleware.AdminAuthenticate())
+	ca.Use(auth.AdminAuthenticate())
+
 	c.GET("/categories", services.FindAllCategories)
 	ca.POST("/add", services.AddCategories)
 }
@@ -31,7 +32,7 @@ func AdminRoutes(r *gin.RouterGroup) {
 }
 func Uploader(r *gin.RouterGroup) {
 	up := r.Group("/admin")
-	up.Use(middleware.AdminAuthenticate())
+	up.Use(auth.AdminAuthenticate())
 	up.POST("/upload", upload.Uploadpath)
 	up.GET("/downloads", upload.FindAllImages)
 
@@ -45,9 +46,9 @@ func UserRoute(r *gin.RouterGroup) {
 	us := r.Group("/")
 
 	authUser := r.Group("/")
-	authUser.Use(middleware.UserAuthenticate())
+	authUser.Use(auth.UserAuthenticate())
 	authAdmin := r.Group("/")
-	authAdmin.Use(middleware.AdminAuthenticate())
+	authAdmin.Use(auth.AdminAuthenticate())
 
 	us.POST("/createdUser", services.RegisterUsers)
 	us.POST("/loginUser", services.LoginUsers)
@@ -59,15 +60,15 @@ func UserRoute(r *gin.RouterGroup) {
 func OrderRouter(r *gin.RouterGroup) {
 	or := r.Group("/")
 	ordr := r.Group("/")
-	or.Use(middleware.AdminAuthenticate())
-	ordr.Use(middleware.UserAuthenticate())
+	or.Use(auth.AdminAuthenticate())
+	ordr.Use(auth.UserAuthenticate())
 
 	or.GET("orders", services.FindordersByadmin)
 	ordr.POST("addorder", services.AddOrder)
 }
 func CartRouter(r *gin.RouterGroup) {
 	ca := r.Group("/")
-	ca.Use(middleware.UserAuthenticate())
+	ca.Use(auth.UserAuthenticate())
 
 	ca.POST("addCart", services.AddCatrs)
 	ca.GET("/getCart", services.GetCarts)

@@ -3,9 +3,9 @@ package services
 import (
 	"context"
 	"net/http"
-	"shop/db"
-	"shop/entity"
-	"shop/middleware"
+	"shop/auth"
+	"shop/database"
+	"shop/entities"
 	"shop/response"
 	"time"
 
@@ -14,17 +14,17 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var proCollection *mongo.Collection = db.GetCollection(db.DB, "products")
+var proCollection *mongo.Collection = database.GetCollection(database.DB, "products")
 
 func FindAllProducts(c *gin.Context) {
-	if err := middleware.CheckUserType(c, "admin"); err != nil {
+	if err := auth.CheckUserType(c, "admin"); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	var products []entity.Products
+	var products []entities.Products
 	defer cancel()
 
 	results, err := proCollection.Find(ctx, bson.M{})
@@ -34,7 +34,7 @@ func FindAllProducts(c *gin.Context) {
 	}
 	//results.Close(ctx)
 	for results.Next(ctx) {
-		var pro entity.Products
+		var pro entities.Products
 		err := results.Decode(&pro)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
@@ -49,12 +49,12 @@ func FindAllProducts(c *gin.Context) {
 }
 func AddProduct() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if err := middleware.CheckUserType(c, "admin"); err != nil {
+		if err := auth.CheckUserType(c, "admin"); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 
 		}
-		var pro entity.Products
+		var pro entities.Products
 		if err := c.ShouldBindJSON(&pro); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"message": "product not truth"})
 			return
@@ -75,7 +75,7 @@ func AddProduct() gin.HandlerFunc {
 func GetProductBySlug(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	slug := c.Param("slug")
-	var pro entity.Products
+	var pro entities.Products
 	defer cancel()
 
 	//slg := strings(slug)

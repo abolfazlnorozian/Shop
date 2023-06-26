@@ -3,9 +3,9 @@ package services
 import (
 	"context"
 	"net/http"
-	"shop/db"
-	"shop/entity"
-	"shop/middleware"
+	"shop/auth"
+	"shop/database"
+	"shop/entities"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,20 +15,20 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var ordersCollection *mongo.Collection = db.GetCollection(db.DB, "pages")
-var brandCollection *mongo.Collection = db.GetCollection(db.DB, "brands")
-var produCollection *mongo.Collection = db.GetCollection(db.DB, "products")
-var countersCollection *mongo.Collection = db.GetCollection(db.DB, "counters")
+var ordersCollection *mongo.Collection = database.GetCollection(database.DB, "pages")
+var brandCollection *mongo.Collection = database.GetCollection(database.DB, "brands")
+var produCollection *mongo.Collection = database.GetCollection(database.DB, "products")
+var countersCollection *mongo.Collection = database.GetCollection(database.DB, "counters")
 
 func FindordersByadmin(c *gin.Context) {
-	if err := middleware.CheckUserType(c, "admin"); err != nil {
+	if err := auth.CheckUserType(c, "admin"); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	var orders []entity.Order
+	var orders []entities.Order
 	defer cancel()
 
 	results, err := ordersCollection.Find(ctx, bson.M{})
@@ -38,7 +38,7 @@ func FindordersByadmin(c *gin.Context) {
 	}
 	//results.Close(ctx)
 	for results.Next(ctx) {
-		var order entity.Order
+		var order entities.Order
 		err := results.Decode(&order)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
@@ -54,7 +54,7 @@ func FindordersByadmin(c *gin.Context) {
 }
 
 func AddOrder(c *gin.Context) {
-	var order entity.Order
+	var order entities.Order
 
 	tokenClaims, exists := c.Get("tokenClaims")
 	if !exists {
@@ -62,7 +62,7 @@ func AddOrder(c *gin.Context) {
 		return
 	}
 
-	claims, ok := tokenClaims.(*middleware.SignedUserDetails)
+	claims, ok := tokenClaims.(*auth.SignedUserDetails)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
 		return
@@ -103,11 +103,6 @@ func AddOrder(c *gin.Context) {
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
 	order.V = 0
-	// if _, err := ordersCollection.InsertOne(c, bson.M{"userId": id}); err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-	// 	return
-
-	// }
 
 	cur, err := brandCollection.Find(c, bson.M{"username": username})
 	if err != nil {
@@ -117,7 +112,7 @@ func AddOrder(c *gin.Context) {
 	defer cur.Close(c)
 
 	for cur.Next(c) {
-		var cart entity.Catrs
+		var cart entities.Catrs
 		err := cur.Decode(&cart)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode cart"})
@@ -129,7 +124,7 @@ func AddOrder(c *gin.Context) {
 			productQuantity := product.Quantity
 
 			// Retrieve product data from "products" collection based on productID
-			var retrievedProduct entity.Products
+			var retrievedProduct entities.Products
 			err := produCollection.FindOne(c, bson.M{"_id": productID}).Decode(&retrievedProduct)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch product"})
@@ -137,7 +132,7 @@ func AddOrder(c *gin.Context) {
 			}
 
 			// Extracting specific fields from retrievedProduct and creating a new Product object
-			orderProduct := entity.Product{
+			orderProduct := entities.Product{
 				Quantity: productQuantity,
 				Id:       retrievedProduct.ID,
 				Name:     retrievedProduct.Name,

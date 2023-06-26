@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"shop/db"
-	"shop/entity"
-	"shop/middleware"
+	"shop/auth"
+	"shop/database"
+	"shop/entities"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,13 +17,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var userCollection *mongo.Collection = db.GetCollection(db.DB, "admins")
+var userCollection *mongo.Collection = database.GetCollection(database.DB, "admins")
 
 var validate = validator.New()
 
 func RegisterAdmins(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	var admin entity.Admins
+	var admin entities.Admins
 	defer cancel()
 	if err := c.ShouldBindJSON(&admin); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -42,7 +42,7 @@ func RegisterAdmins(c *gin.Context) {
 		log.Panic(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while cheking for the email"})
 	}
-	password := middleware.HashPassword(*admin.Password)
+	password := auth.HashPassword(*admin.Password)
 
 	admin.Password = &password
 	if count > 0 {
@@ -66,8 +66,8 @@ func RegisterAdmins(c *gin.Context) {
 
 func LoginAdmin(c *gin.Context) {
 	var ctx, cancle = context.WithTimeout(context.Background(), 100*time.Second)
-	var user entity.Admins
-	var foundUser entity.Admins
+	var user entities.Admins
+	var foundUser entities.Admins
 	defer cancle()
 	if err := c.ShouldBind(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
@@ -80,7 +80,7 @@ func LoginAdmin(c *gin.Context) {
 		return
 	}
 
-	passwordIsValid, _ := middleware.VerifyPassword(*user.Password, *foundUser.Password)
+	passwordIsValid, _ := auth.VerifyPassword(*user.Password, *foundUser.Password)
 	defer cancle()
 	if passwordIsValid != true {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Password is incorrect"})
@@ -89,8 +89,8 @@ func LoginAdmin(c *gin.Context) {
 	if foundUser.Username == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "user not found"})
 	}
-	token, refreshToken, _ := middleware.GenerateAllTokens(*foundUser.Username, foundUser.Role)
-	middleware.UpdateAllTokens(token, refreshToken, foundUser.Role)
+	token, refreshToken, _ := auth.GenerateAllTokens(*foundUser.Username, foundUser.Role)
+	auth.UpdateAllTokens(token, refreshToken, foundUser.Role)
 	err = userCollection.FindOne(ctx, bson.M{"role": foundUser.Role}).Decode(&foundUser)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
