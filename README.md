@@ -1,6 +1,6 @@
-# Project Title
+# Shop
 
-GoShop API: A GoLang Web Application with MongoDB, Gin, and JWT
+Online Shop API: A GoLang Web Application with MongoDB, Gin, and JWT
 
 ## Project Structure
 
