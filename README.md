@@ -1,6 +1,6 @@
 # Project Title
 
-Online Shop API: A GoLang Web Application with MongoDB, Gin, and JWT
+GoShop API: A GoLang Web Application with MongoDB, Gin, and JWT
 
 ## Project Structure
 
@@ -36,12 +36,12 @@ Online Shop API: A GoLang Web Application with MongoDB, Gin, and JWT
 - `services`: Contains service files for business logic.
 - `upload`: Contains files related to file uploading.
 
-## Clone Repository
-`https://github.com/abolfazlnorozian/shop.git`
+
 
 ## Requirements
 
 go 1.17
+
 MongoDB 4.4.13 
 
 ## Set up environment variables
@@ -61,4 +61,6 @@ Open the .env file and provide the required configuration variables such as:
 
 If all tests pass, start the HTTP service with:
 
+```bash
 go run main.go
+```
