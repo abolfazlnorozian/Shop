@@ -1,0 +1,1 @@
+`upload`: The upload directory consists of files related to file uploading functionality, such as `upload.go`.

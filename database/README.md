@@ -1,0 +1,1 @@
+`database`: This directory contains files related to the database, including the database configuration (`database.go`), environment variables (`env.go`), and functions for working with collections (`getcollection.go`).

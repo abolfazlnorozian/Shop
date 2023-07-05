@@ -1,0 +1,1 @@
+`router`: The router directory contains the router file (`router.go`) responsible for defining API endpoints and routing requests.

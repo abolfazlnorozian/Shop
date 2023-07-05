@@ -1,0 +1,2 @@
+
+`entities`: The` entities` directory houses the entity models for the online shop. It includes files such as `admin.go`, `carts.go`, `category.go`, `counter.go`, `order.go`, `product.go`, `upload.go`, and `user.go`.

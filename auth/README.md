@@ -1,0 +1,1 @@
+`auth`: This directory contains `auth` files responsible for authentication and authorization. It includes files such as `adminToken.go`, `authMiddleware.go`, and `userToken.go`.

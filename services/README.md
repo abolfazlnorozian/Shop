@@ -1,0 +1,1 @@
+`services`: This directory holds the service files that encapsulate the business logic of the online shop. It includes files like `admin.go`, `carts.go`, `category.go`,` order.go`, `product.go`, and `user.go`.

@@ -1,0 +1,1 @@
+`response`‍: This directory includes files related to handling API responses, such as `response.go`.

@@ -1,0 +1,1 @@
+`helpers`: The helpers directory contains files that are A series of auxiliary functions to perform special commands, such as code generation or semi-random user, etc. It includes files like `generateId.go` and `generateCode` and `generateUsername.go`and `user.go`.

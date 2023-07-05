@@ -3,22 +3,14 @@
 Online Shop API: A GoLang Web Application with MongoDB, Gin, and JWT
 
 ## Project Structure
-
-`database`: This directory contains files related to the database, including the database configuration (`database.go`), environment variables (`env.go`), and functions for working with collections (`getcollection.go`).
-
-`auth`: This directory contains `auth` files responsible for authentication and authorization. It includes files such as `adminToken.go`, `authMiddleware.go`, and `userToken.go`.
-
-`entities`: The` entities` directory houses the entity models for the online shop. It includes files such as `admin.go`, `carts.go`, `category.go`, `counter.go`, `order.go`, `product.go`, `upload.go`, and `user.go`.
-
-`helpers`: The helpers directory contains files that are A series of auxiliary functions to perform special commands, such as code generation or semi-random user, etc. It includes files like `generateId.go` and `generateCode` and `generateUsername.go`and `user.go`.
-
-`response`‍: This directory includes files related to handling API responses, such as `response.go`.
-
-`router`: The router directory contains the router file (`router.go`) responsible for defining API endpoints and routing requests.
-
-`services`: This directory holds the service files that encapsulate the business logic of the online shop. It includes files like `admin.go`, `carts.go`, `category.go`,` order.go`, `product.go`, and `user.go`.
-
-`upload`: The upload directory consists of files related to file uploading functionality, such as `upload.go`.
+- [Database](./database/README.md)
+- [Entities](./entities/README.md)
+- [Auth](./auth/README.md)
+- [Helpers](./helpers/README.md)
+- [Response](./response/README.md)
+- [Router](./router/README.md)
+- [Services](./services/README.md)
+- [Upload](./upload/README.md)
 
 `go.mod` and `go.sum`: These files are used for managing dependencies with Go modules.
 
