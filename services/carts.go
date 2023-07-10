@@ -2,6 +2,7 @@ package services
 
 import (
 	"net/http"
+	"reflect"
 	"shop/auth"
 	"shop/database"
 	"shop/entities"
@@ -55,7 +56,7 @@ func AddCatrs(c *gin.Context) {
 		// If an existing document is found, check if the productId already exists in the Products array
 		existingProductIndex := -1
 		for i, product := range existingDoc.Products {
-			if product.ProductId == cart.Products[0].ProductId {
+			if product.ProductId == cart.Products[0].ProductId && reflect.DeepEqual(product.VariationsKey, cart.Products[0].VariationsKey) {
 				existingProductIndex = i
 				break
 			}

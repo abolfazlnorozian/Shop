@@ -115,11 +115,12 @@ func AddOrder(c *gin.Context) {
 	// Iterate over products in the cart and add them to the order
 	for _, product := range cart.Products {
 		productID := product.ProductId
+		variationKey := product.VariationsKey
 		productQuantity := product.Quantity
 
 		// Retrieve product data from "products" collection based on productID
 		var retrievedProduct entities.Products
-		err := produCollection.FindOne(c, bson.M{"_id": productID}).Decode(&retrievedProduct)
+		err := produCollection.FindOne(c, bson.M{"_id": productID, "variations": bson.M{"$elemMatch": bson.M{"keys": variationKey}}}).Decode(&retrievedProduct)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch product"})
 			return
@@ -127,10 +128,11 @@ func AddOrder(c *gin.Context) {
 
 		// Extract specific fields from retrievedProduct and create a new Product object
 		orderProduct := entities.Product{
-			Quantity: productQuantity,
-			Id:       retrievedProduct.ID,
-			Name:     retrievedProduct.Name,
-			Price:    retrievedProduct.Price,
+			Quantity:     productQuantity,
+			Id:           retrievedProduct.ID,
+			Name:         retrievedProduct.Name,
+			Price:        retrievedProduct.Price,
+			VariationKey: retrievedProduct.Variations,
 		}
 
 		order.Products = append(order.Products, orderProduct)
