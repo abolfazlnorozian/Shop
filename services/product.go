@@ -74,9 +74,10 @@ func AddProduct() gin.HandlerFunc {
 
 func GetProductBySlug(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	slug := c.Param("slug")
 	var pro entities.Products
-	defer cancel()
 
 	//slg := strings(slug)
 

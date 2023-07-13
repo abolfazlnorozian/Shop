@@ -28,7 +28,7 @@ type Order struct {
 
 type Product struct {
 	Quantity        int                `json:"quantity" bson:"quantity"`
-	VariationKey    []Variation        `json:"variationsKey" bson:"variationsKey"`
+	VariationKey    *[]int             `json:"variationsKey" bson:"variationsKey"`
 	Id              primitive.ObjectID `json:"_id" bson:"_id"`
 	Name            string             `json:"name" bson:"name"`
 	Price           int                `json:"price" bson:"price"`
