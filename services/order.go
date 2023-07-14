@@ -2,7 +2,9 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"reflect"
 	"shop/auth"
 	"shop/database"
 	"shop/entities"
@@ -53,8 +55,140 @@ func FindordersByadmin(c *gin.Context) {
 
 }
 
-func AddOrder(c *gin.Context) {
+// func AddOrder(c *gin.Context) {
 
+// 	var order entities.Order
+
+// 	tokenClaims, exists := c.Get("tokenClaims")
+// 	if !exists {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+// 		return
+// 	}
+
+// 	claims, ok := tokenClaims.(*auth.SignedUserDetails)
+// 	if !ok {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+// 		return
+// 	}
+
+// 	username := claims.Username
+// 	id := claims.Id
+// 	if err := c.ShouldBindJSON(&order); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"message": "order not truth"})
+// 		return
+// 	}
+// 	counter := struct {
+// 		NextID int `bson:"next_id"`
+// 	}{}
+// 	err := countersCollection.FindOneAndUpdate(
+// 		c,
+// 		bson.M{"_id": "order_counter"},
+// 		bson.M{"$inc": bson.M{"next_id": 1}},
+// 		options.FindOneAndUpdate().SetReturnDocument(options.After),
+// 	).Decode(&counter)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate ID"})
+// 		return
+// 	}
+
+// 	order.Id = counter.NextID
+// 	order.Address.Id = primitive.NewObjectID()
+
+// 	order.StartDate = time.Now()
+// 	order.Status = "none"
+// 	order.PaymentId = ""
+
+// 	order.UserId = id
+
+// 	order.TotalDiscount = 0
+
+// 	order.PostalCost = 0
+// 	order.CreatedAt = time.Now()
+// 	order.UpdatedAt = time.Now()
+// 	order.V = 0
+
+// 	var cart entities.Catrs
+// 	err = brandCollection.FindOne(c, bson.M{"username": username}).Decode(&cart)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cart"})
+// 		return
+// 	}
+
+// 	// Iterate over products in the cart and add them to the order
+// 	for _, product := range cart.Products {
+// 		productID := product.ProductId
+// 		variationKey := product.VariationsKey
+// 		productQuantity := product.Quantity
+
+// 		// Retrieve product data from "products" collection based on productID
+// 		var retrievedProduct entities.Products
+// 		err := produCollection.FindOne(c, bson.M{"_id": productID, "variations": bson.M{"$elemMatch": bson.M{"keys": variationKey}}}).Decode(&retrievedProduct)
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch product"})
+// 			return
+// 		}
+// 		// Check if the retrieved product is empty (not found)
+// 		if retrievedProduct.ID.IsZero() {
+// 			continue // Skip this product and move to the next one
+// 		}
+// 		// Find the selected variation
+// var selectedVariation entities.Variation
+// for _, variation := range retrievedProduct.Variations {
+// 	// Convert variation.Key to string for comparison
+// 	keyStr := fmt.Sprintf("%v", variation.Key)
+
+// 	// Compare the converted key with variationKey
+// 	if keyStr == variationKey {
+// 		selectedVariation = variation
+// 		break
+// 	}
+// }
+
+// 			// Compare the converted key with variation.Keys
+// 			if reflect.DeepEqual(variation.Keys, []int{keyInt}) {
+// 				selectedVariation = variation
+// 				break
+// 			}
+// 		}
+
+// 		// Skip the product if the selected variation is not found
+// 		if selectedVariation.Key == "" {
+// 			continue // Skip this product and move to the next one
+// 		}
+
+// 		// Extract specific fields from retrievedProduct and create a new Product object
+// 		orderProduct := entities.Product{
+// 			Quantity:     productQuantity,
+// 			Id:           retrievedProduct.ID,
+// 			Name:         retrievedProduct.Name,
+// 			Price:        retrievedProduct.Price,
+// 			VariationKey: selectedVariation.Key,
+// 		}
+
+// 		order.Products = append(order.Products, orderProduct)
+// 		order.TotalQuantity += productQuantity
+// 		order.TotalPrice += retrievedProduct.Price
+// 	}
+
+// 	// Remove the shopping cart from the "brandCollection"
+// 	 _,err = brandCollection.DeleteOne(c, bson.M{"username": username})
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove cart"})
+// 		return
+// 	}
+
+// 	// Insert order into the "ordersCollection"
+// 	_, err = ordersCollection.InsertOne(c, order)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	// Send the response to Postman
+// 	c.JSON(http.StatusOK, gin.H{"message": order})
+
+// }
+func AddOrder(c *gin.Context) {
 	var order entities.Order
 
 	tokenClaims, exists := c.Get("tokenClaims")
@@ -72,12 +206,14 @@ func AddOrder(c *gin.Context) {
 	username := claims.Username
 	id := claims.Id
 	if err := c.ShouldBindJSON(&order); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "order not truth"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid order format"})
 		return
 	}
+
 	counter := struct {
 		NextID int `bson:"next_id"`
 	}{}
+
 	err := countersCollection.FindOneAndUpdate(
 		c,
 		bson.M{"_id": "order_counter"},
@@ -95,11 +231,9 @@ func AddOrder(c *gin.Context) {
 	order.StartDate = time.Now()
 	order.Status = "none"
 	order.PaymentId = ""
-
 	order.UserId = id
 
 	order.TotalDiscount = 0
-
 	order.PostalCost = 0
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
@@ -125,6 +259,25 @@ func AddOrder(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch product"})
 			return
 		}
+		// Check if the retrieved product is empty (not found)
+		if retrievedProduct.ID.IsZero() {
+			continue // Skip this product and move to the next one
+		}
+
+		// Find the selected variation
+		var selectedVariation entities.Variation
+		for _, variation := range retrievedProduct.Variations {
+			if reflect.DeepEqual(variation.Keys, variationKey) {
+				selectedVariation = variation
+				break
+			}
+		}
+
+		// Check if a valid variation was found
+		if selectedVariation.Id.IsZero() {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Selected variation not found"})
+			return
+		}
 
 		// Extract specific fields from retrievedProduct and create a new Product object
 		orderProduct := entities.Product{
@@ -132,8 +285,9 @@ func AddOrder(c *gin.Context) {
 			Id:           retrievedProduct.ID,
 			Name:         retrievedProduct.Name,
 			Price:        retrievedProduct.Price,
-			VariationKey: retrievedProduct.Variations,
+			VariationKey: selectedVariation.Keys,
 		}
+		fmt.Printf("orderProduct: %+v\n", orderProduct)
 
 		order.Products = append(order.Products, orderProduct)
 		order.TotalQuantity += productQuantity
@@ -156,5 +310,4 @@ func AddOrder(c *gin.Context) {
 
 	// Send the response to Postman
 	c.JSON(http.StatusOK, gin.H{"message": order})
-
 }
