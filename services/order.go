@@ -267,17 +267,16 @@ func AddOrder(c *gin.Context) {
 		// Find the selected variation
 		var selectedVariation entities.Variation
 		for _, variation := range retrievedProduct.Variations {
-			// Convert variation.Key to a string slice for comparison
-			variationKeysStr := make([]string, len(variation.Keys))
-			for i, key := range variation.Keys {
-				variationKeysStr[i] = fmt.Sprintf("%v", key)
-			}
-
-			// Compare the converted keys with variationKey
-			if reflect.DeepEqual(variationKeysStr, variationKey) {
+			if reflect.DeepEqual(variation.Keys, variationKey) {
 				selectedVariation = variation
 				break
 			}
+		}
+
+		// Check if a valid variation was found
+		if selectedVariation.Id.IsZero() {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Selected variation not found"})
+			return
 		}
 
 		// Extract specific fields from retrievedProduct and create a new Product object
@@ -286,8 +285,9 @@ func AddOrder(c *gin.Context) {
 			Id:           retrievedProduct.ID,
 			Name:         retrievedProduct.Name,
 			Price:        retrievedProduct.Price,
-			VariationKey: &selectedVariation.Keys,
+			VariationKey: selectedVariation.Keys,
 		}
+		fmt.Printf("orderProduct: %+v\n", orderProduct)
 
 		order.Products = append(order.Products, orderProduct)
 		order.TotalQuantity += productQuantity
