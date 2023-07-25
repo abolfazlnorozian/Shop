@@ -45,18 +45,18 @@ func Downloader(r *gin.RouterGroup) {
 
 }
 func UserRoute(r *gin.RouterGroup) {
-	us := r.Group("/")
+	us := r.Group("/users")
 
 	authUser := r.Group("/")
 	authUser.Use(auth.UserAuthenticate())
 	authAdmin := r.Group("/")
 	authAdmin.Use(auth.AdminAuthenticate())
 
-	us.POST("/createdUser", services.RegisterUsers)
-	us.POST("/loginUser", services.LoginUsers)
-	authAdmin.GET("/users", services.GetAllUsers)
+	us.GET("/auth/smsverification", services.RegisterUsers)
+	us.OPTIONS("/auth/login", services.LoginUsers)
+	authAdmin.GET("/users2", services.GetAllUsers)
 	authUser.PUT("/updated", services.UpdatedUser)
-	authUser.GET("/oneuser", services.GetUserByToken)
+	authUser.GET("/users", services.GetUserByToken)
 
 }
 func OrderRouter(r *gin.RouterGroup) {
@@ -69,10 +69,10 @@ func OrderRouter(r *gin.RouterGroup) {
 	ordr.POST("addorder", services.AddOrder)
 }
 func CartRouter(r *gin.RouterGroup) {
-	ca := r.Group("/")
+	ca := r.Group("/users")
 	ca.Use(auth.UserAuthenticate())
 
 	ca.POST("addCart", services.AddCatrs)
-	ca.GET("/getCart", services.GetCarts)
+	ca.GET("/carts", services.GetCarts)
 	ca.DELETE("/deletedCart", services.DeleteCart)
 }

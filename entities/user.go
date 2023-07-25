@@ -13,7 +13,7 @@ type Users struct {
 	Favorites           []*primitive.ObjectID `json:"favoritesProducts" bson:"favoritesProducts"`
 	Username            *string               `json:"username" form:"username" bson:"username"`
 	VerifyCode          *string               `json:"verifyCode" form:"verifyCode" bson:"verifyCode"`
-	PhoneNumber         string                `json:"phoneNumber" form:"phoneNumber" bson:"phoneNumber"`
+	PhoneNumber         string                `json:"phoneNumber" form:"phone" bson:"phoneNumber"`
 	Sex                 int                   `json:"sex" bson:"sex"`
 	Role                string                `json:"role" bson:"role"`
 	Address             []Addr                `json:"address" bson:"address"`
@@ -25,12 +25,6 @@ type Users struct {
 	LastName            *string               `json:"lastname" bson:"lastname"`
 	Name                *string               `json:"name" bson:"name"`
 }
-
-//validate:"omitempty,required,eq=admin|eq=user"
-
-// type Favorite struct {
-// 	Id primitive.ObjectID
-// }
 
 type Addr struct {
 	Id         *primitive.ObjectID `json:"_id" bson:"_id"`

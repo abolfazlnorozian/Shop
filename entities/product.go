@@ -10,7 +10,7 @@ import (
 
 type Products struct {
 	ID              primitive.ObjectID   `json:"_id" bson:"_id,omitempty"`
-	Amazing         bool                 `json:"amazing" bson:"amazing"`
+	Amazing         bool                 `json:"amazing" form:"amazing" bson:"amazing"`
 	IsMillModel     bool                 `json:"isMillModel" bson:"isMillModel"`
 	ProductType     string               `json:"productType" bson:"productType"`
 	Quantity        int                  `json:"quantity" bson:"quantity"`

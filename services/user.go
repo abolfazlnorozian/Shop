@@ -19,7 +19,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var usersCollection *mongo.Collection = database.GetCollection(database.DB, "brandschemas")
+var usersCollection *mongo.Collection = database.GetCollection(database.DB, "barndschemas")
 var validates = validator.New()
 
 func RegisterUsers(c *gin.Context) {
@@ -78,14 +78,14 @@ func RegisterUsers(c *gin.Context) {
 	// userType := "user"
 
 	user.Sex = 1
-	resultInsertionNumber, insertErr := usersCollection.InsertOne(ctx, user)
+	_, insertErr := usersCollection.InsertOne(ctx, user)
 	if insertErr != nil {
 		msg := fmt.Sprintf("User item was not created")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": resultInsertionNumber, "code": newVerifycode})
+	c.JSON(http.StatusOK, gin.H{"success": "true", "message": "username", "body": gin.H{"username": &randomUsername, "password": newVerifycode}})
 }
 
 func LoginUsers(c *gin.Context) {
@@ -123,7 +123,7 @@ func LoginUsers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "login", "body": gin.H{"token": &token, "refreshToken": &refreshToken}})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "token_refreshToken", "body": gin.H{"token": &token, "refreshToken": &refreshToken}})
 
 }
 

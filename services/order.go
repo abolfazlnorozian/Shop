@@ -21,6 +21,7 @@ var ordersCollection *mongo.Collection = database.GetCollection(database.DB, "pa
 var brandCollection *mongo.Collection = database.GetCollection(database.DB, "brands")
 var produCollection *mongo.Collection = database.GetCollection(database.DB, "products")
 var countersCollection *mongo.Collection = database.GetCollection(database.DB, "counters")
+var addusersCollection *mongo.Collection = database.GetCollection(database.DB, "brandschemas")
 
 func FindordersByadmin(c *gin.Context) {
 	if err := auth.CheckUserType(c, "admin"); err != nil {
@@ -112,6 +113,23 @@ func AddOrder(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cart"})
 		return
 	}
+	// var address entities.Addr
+	// if err := c.ShouldBindJSON(&address); err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid address format"})
+	// 	return
+	// }
+
+	// user := entities.Users{
+	// 	// Existing fields...
+	// 	Address: append(user.Address, &address),
+	// }
+
+	// // Update the user document in the collection
+	// _, err = userCollection.UpdateOne(c, bson.M{"_id": id}, bson.M{"$set": user})
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+	// 	return
+	// }
 
 	// Iterate over products in the cart and add them to the order
 	for _, product := range cart.Products {
