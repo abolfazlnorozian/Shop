@@ -7,6 +7,7 @@ import (
 
 	"shop/router"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -22,6 +23,12 @@ func main() {
 	if port == "" {
 		port = "8000"
 	}
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{
+		"http://localhost:4000",
+		//"https://ghahvedark.com",
+	}
+	r.Use(cors.New(config))
 	router.ProRouter(v1)
 	router.CategoryRouter(v1)
 	router.AdminRoutes(v1)
@@ -30,6 +37,8 @@ func main() {
 	router.UserRoute(v1)
 	router.OrderRouter(v1)
 	router.CartRouter(v1)
+	router.BrandRoute(v1)
+	router.PageRoute(v1)
 
 	go func() {
 		database.MD()

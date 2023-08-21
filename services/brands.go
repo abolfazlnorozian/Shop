@@ -1,0 +1,95 @@
+package services
+
+import (
+	"context"
+	"net/http"
+	"shop/database"
+	"shop/entities"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+)
+
+var brandCollection *mongo.Collection = database.GetCollection(database.DB, "brands")
+
+func GetBrands(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var brands []map[string]interface{} // Use slice of maps to hold specific fields
+
+	results, err := brandCollection.Find(ctx, bson.M{})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to find collection"})
+		return
+	}
+	defer results.Close(ctx)
+
+	for results.Next(ctx) {
+		var brand entities.Brands
+		err := results.Decode(&brand)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+
+		// Create a map with the desired fields from the 'entities.Brands' struct
+		brandData := map[string]interface{}{
+			"id":      brand.Id,
+			"name":    brand.Name,
+			"details": brand.Details,
+			"url":     brand.Image.Url,
+		}
+
+		brands = append(brands, brandData)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"body": brands, "message": "brands", "success": true})
+}
+
+//****************************************************************************
+
+// // Define a custom struct for the response
+// type BrandResponse struct {
+// 	ID      int    `json:"id"`
+// 	Name    string `json:"name"`
+// 	Details string `json:"details"`
+// 	URL     string `json:"url"`
+// }
+
+// func GetBrands(c *gin.Context) {
+// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+// 	defer cancel()
+
+// 	var brands []BrandResponse // Use the custom response struct
+
+// 	results, err := brandCollection.Find(ctx, bson.M{})
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to find collection"})
+// 		return
+// 	}
+// 	defer results.Close(ctx)
+
+// 	for results.Next(ctx) {
+// 		var brand entities.Brands
+// 		err := results.Decode(&brand)
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+// 			return
+// 		}
+
+// 		// Extract the desired fields from the 'entities.Brands' struct
+// 		brandResponse := BrandResponse{
+// 			ID:      brand.Id,
+// 			Name:    brand.Name,
+// 			Details: brand.Details,
+// 			URL:     brand.Image.Url,
+// 		}
+
+// 		brands = append(brands, brandResponse)
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "brands", "body": brands})
+// }

@@ -2,16 +2,19 @@ package services
 
 import (
 	"context"
+	"math"
 	"net/http"
 	"shop/auth"
 	"shop/database"
 	"shop/entities"
 	"shop/response"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var proCollection *mongo.Collection = database.GetCollection(database.DB, "products")
@@ -88,4 +91,106 @@ func GetProductBySlug(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, pro)
 
+}
+
+func GetProductsByOneField(c *gin.Context) {
+	// Retrieve the amazing parameter from the request
+	amazingStr := c.Query("amazing")
+	amazing, err := strconv.ParseBool(amazingStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid 'amazing' parameter"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Pagination parameters from the query
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "40"))
+
+	// Calculate skip value for pagination
+	skip := (page - 1) * limit
+
+	filter := bson.M{"amazing": amazing}
+	var products []entities.Products
+
+	// Perform the database query with pagination
+	results, err := proCollection.Find(ctx, filter, options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to query products"})
+		return
+	}
+	defer results.Close(ctx)
+
+	for results.Next(ctx) {
+		var pro entities.Products
+		err := results.Decode(&pro)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+		products = append(products, pro)
+	}
+
+	// Calculate total number of documents in the collection (without pagination)
+	totalDocs, err := proCollection.CountDocuments(ctx, filter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to count products"})
+		return
+	}
+
+	// Calculate total number of pages based on the limit
+	totalPages := int(math.Ceil(float64(totalDocs) / float64(limit)))
+
+	// Determine if there are previous and next pages
+	hasPrevPage := page > 1
+	hasNextPage := page < totalPages
+
+	// Prepare the custom response with selected fields
+	var customProducts []gin.H
+	for _, product := range products {
+		customProduct := gin.H{
+			"_id":             product.ID,
+			"amazing":         product.Amazing,
+			"productType":     product.ProductType,
+			"images":          product.Images,
+			"name":            product.Name,
+			"price":           product.Price,
+			"discountPercent": product.DiscountPercent,
+			"stock":           product.Stock,
+			"slug":            product.Slug,
+			"variations":      product.Variations,
+			"salesNumber":     product.SalesNumber,
+			"bannerUrl":       product.BannerUrl,
+		}
+		customProducts = append(customProducts, customProduct)
+	}
+
+	// Prepare the response with custom products and pagination information
+	response := gin.H{
+		"docs":          customProducts,
+		"totalDocs":     totalDocs,
+		"limit":         limit,
+		"totalPages":    totalPages,
+		"page":          page,
+		"pagingCounter": skip + 1,
+		"hasPrevPage":   hasPrevPage,
+		"hasNextPage":   hasNextPage,
+	}
+
+	// Set prevPage and nextPage values based on the current page
+	if hasPrevPage {
+		response["prevPage"] = page - 1
+	} else {
+		response["prevPage"] = nil
+	}
+
+	if hasNextPage {
+		response["nextPage"] = page + 1
+	} else {
+		response["nextPage"] = nil
+	}
+
+	c.JSON(http.StatusOK, response)
 }

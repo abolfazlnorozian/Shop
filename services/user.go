@@ -19,7 +19,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var usersCollection *mongo.Collection = database.GetCollection(database.DB, "barndschemas")
+var usersCollection *mongo.Collection = database.GetCollection(database.DB, "brands")
 var validates = validator.New()
 
 func RegisterUsers(c *gin.Context) {
@@ -27,10 +27,11 @@ func RegisterUsers(c *gin.Context) {
 	defer cancel()
 	var user entities.Users
 
-	if err := c.Bind(&user); err != nil {
+	if err := c.ShouldBind(&user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "not found"})
 		return
 	}
+
 	validationErr := validate.Struct(&user)
 	if validationErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
@@ -45,6 +46,12 @@ func RegisterUsers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate verify code"})
 		return
 	}
+	// Ensure that the phone number is captured correctly from the API request
+	phoneNumber := c.Query("phone")
+	if len(phoneNumber) >= 10 {
+		phoneNumber = phoneNumber[len(phoneNumber)-10:]
+	}
+	user.PhoneNumber = phoneNumber
 	user.VerifyCode = &hashedCode
 
 	user.Role = "user"
@@ -59,16 +66,16 @@ func RegisterUsers(c *gin.Context) {
 	}
 
 	count, err := usersCollection.CountDocuments(ctx, bson.M{"phoneNumber": user.PhoneNumber})
+	if err != nil {
+		log.Panic(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error occured while cheking for the email"})
+		return
+	}
 	if count > 0 {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "this PhoneNumber already exists"})
+		c.JSON(http.StatusOK, gin.H{"error": "this PhoneNumber already exists"})
 		return
 	}
 
-	if err != nil {
-		log.Panic(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while cheking for the email"})
-		return
-	}
 	randomUsername := helpers.GenerateRandomUsername(user.PhoneNumber)
 	user.Username = &randomUsername
 
@@ -77,7 +84,7 @@ func RegisterUsers(c *gin.Context) {
 	user.Id = primitive.NewObjectID()
 	// userType := "user"
 
-	user.Sex = 1
+	user.Sex = -1
 	_, insertErr := usersCollection.InsertOne(ctx, user)
 	if insertErr != nil {
 		msg := fmt.Sprintf("User item was not created")
@@ -99,20 +106,37 @@ func LoginUsers(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
+	// Remove leading zero if present
+	phoneNumber := user.PhoneNumber
+	if phoneNumber[0] == '0' {
+		phoneNumber = phoneNumber[1:]
+	}
 
-	err := usersCollection.FindOne(ctx, bson.M{"phoneNumber": user.PhoneNumber}).Decode(&foundUser)
+	// Query for the user based on both versions of phone numbers
+	query := bson.M{
+		"$or": []bson.M{
+			{"phoneNumber": user.PhoneNumber},  // Original phone number with zero
+			{"phoneNumber": "0" + phoneNumber}, // Phone number without leading zero
+		},
+	}
+
+	err := usersCollection.FindOne(ctx, query).Decode(&foundUser)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is incorrect"})
 		return
 	}
+
+	if foundUser.PhoneNumber == "" || phoneNumber != foundUser.PhoneNumber {
+		fmt.Println("Phone number comparison failed.")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "phoneNumber is incorrect"})
+		return
+	}
+
 	passwordIsValid, _ := helpers.VerifyPassword(*user.VerifyCode, *foundUser.VerifyCode)
 	defer cancle()
 	if passwordIsValid != true {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Password  is incorrect"})
 		return
-	}
-	if foundUser.PhoneNumber == "" || user.PhoneNumber != foundUser.PhoneNumber {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "phoneNumber is incorrect"})
 	}
 
 	token, refreshToken, _ := auth.GenerateUserAllTokens(foundUser.Id, foundUser.PhoneNumber, foundUser.Role, *foundUser.Username)
@@ -291,6 +315,12 @@ func GetUserByToken(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user"})
 		return
 	}
+	// Modify user object before returning
+	user.Favorites = []*primitive.ObjectID{}
+	user.ActiveSession = []string{}
+	if len(user.Address) == 0 {
+		user.Address = []entities.Addr{}
+	}
 
-	c.JSON(http.StatusOK, gin.H{"user": user})
+	c.JSON(http.StatusOK, user)
 }

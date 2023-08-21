@@ -9,14 +9,16 @@ import (
 )
 
 func ProRouter(r *gin.RouterGroup) {
+	pro := r.Group("/")
 	userAuth := r.Group("/")
 	adminAuth := r.Group("/")
 
 	adminAuth.Use(auth.AdminAuthenticate())
 	//userAuth.Use(auth.UserAuthenticate())
-	adminAuth.GET("/products", services.FindAllProducts)
+	adminAuth.GET("/allproduct", services.FindAllProducts)
 	adminAuth.POST("/addproduct", services.AddProduct())
 	userAuth.GET("/getProduct/:slug", services.GetProductBySlug)
+	pro.GET("/products", services.GetProductsByOneField)
 }
 
 func CategoryRouter(r *gin.RouterGroup) {
@@ -53,7 +55,7 @@ func UserRoute(r *gin.RouterGroup) {
 	authAdmin.Use(auth.AdminAuthenticate())
 
 	us.GET("/auth/smsverification", services.RegisterUsers)
-	us.OPTIONS("/auth/login", services.LoginUsers)
+	us.POST("/auth/login", services.LoginUsers)
 	authAdmin.GET("/users2", services.GetAllUsers)
 	authUser.PUT("/updated", services.UpdatedUser)
 	authUser.GET("/users", services.GetUserByToken)
@@ -75,4 +77,13 @@ func CartRouter(r *gin.RouterGroup) {
 	ca.POST("addCart", services.AddCatrs)
 	ca.GET("/carts", services.GetCarts)
 	ca.DELETE("/deletedCart", services.DeleteCart)
+}
+
+func BrandRoute(r *gin.RouterGroup) {
+	b := r.Group("/")
+	b.GET("/brands", services.GetBrands)
+}
+func PageRoute(r *gin.RouterGroup) {
+	b := r.Group("/")
+	b.GET("/pages/index", services.GetPages)
 }
