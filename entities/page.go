@@ -15,6 +15,6 @@ type Pages struct {
 
 type Metas struct {
 	Keywords    []string `json:"keywords" bson:"keywords"`
-	Title       string   `json:"title" bson:"title"`
-	Description string   `json:"description" bson:"description"`
+	Title       string   `json:"title,omitempty" bson:"title,omitempty"`
+	Description string   `json:"description,omitempty" bson:"description,omitempty"`
 }

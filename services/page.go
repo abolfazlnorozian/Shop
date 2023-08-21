@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"shop/database"
 	"shop/entities"
-	"shop/response"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -43,8 +42,12 @@ func GetPages(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
 		}
+		if pgs.Mode == "desktop" {
+			pgs.Meta.Title = ""
+			pgs.Meta.Description = ""
+		}
 		pages = append(pages, pgs)
 	}
 
-	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": &pages}})
+	c.JSON(http.StatusOK, gin.H{"success": true, "massage": "page", "body": pages})
 }
