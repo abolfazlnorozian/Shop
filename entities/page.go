@@ -1,6 +1,8 @@
 package entities
 
-import "time"
+import (
+	"time"
+)
 
 type Pages struct {
 	Id        int       `json:"_id" bson:"_id"`
@@ -11,6 +13,7 @@ type Pages struct {
 	CreatedAt time.Time `json:"createdAt" bson:"createddAt"`
 	UpdatedAt time.Time `json:"updatedAt" bson:"updatedAt"`
 	V         int       `json:"__v" bson:"__v"`
+	RowsInfo  []Row     `json:"rowsInfo" bson:"rowsInfo"`
 }
 
 type Metas struct {
