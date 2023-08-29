@@ -18,7 +18,7 @@ import (
 )
 
 var ordersCollection *mongo.Collection = database.GetCollection(database.DB, "pages")
-var brandCollection *mongo.Collection = database.GetCollection(database.DB, "brands")
+var XCollection *mongo.Collection = database.GetCollection(database.DB, "brands")
 var produCollection *mongo.Collection = database.GetCollection(database.DB, "products")
 var countersCollection *mongo.Collection = database.GetCollection(database.DB, "counters")
 var addusersCollection *mongo.Collection = database.GetCollection(database.DB, "brandschemas")

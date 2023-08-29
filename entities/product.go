@@ -36,6 +36,8 @@ type Products struct {
 	V               int                  `json:"__v" bson:"__v"`
 	ShortID         string               `json:"shortId" bson:"shortId"`
 	NotExist        bool                 `json:"notExist" bson:"notExist"`
+	BannerUrl       string               `json:"bannerUrl" bson:"bannerUrl"`
+	SalesNumber     int                  `json:"salesNumber" bson:"salesNumber"`
 }
 
 type ImagePro struct {
