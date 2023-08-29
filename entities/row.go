@@ -5,7 +5,7 @@ import "time"
 type Row struct {
 	ID              int       `json:"_id" bson:"_id"`
 	Fluid           bool      `json:"fluid" bson:"fluid"`
-	BackGroundColor string    `json:"backgroundColor" bson:"backgroundColor" `
+	BackgroundColor string    `json:"backgroundColor" bson:"backgroundColor" `
 	Cols            []int     `json:"cols" bson:"cols"`
 	PageId          int       `json:"pageId" bson:"pageId"`
 	CreatedAt       time.Time `json:"createdAt" bson:"createdAt"`
