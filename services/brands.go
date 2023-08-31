@@ -40,7 +40,7 @@ func GetBrands(c *gin.Context) {
 			"id":      brand.Id,
 			"name":    brand.Name,
 			"details": brand.Details,
-			"url":     brand.Image.Url,
+			"image":   brand.Image,
 		}
 
 		brands = append(brands, brandData)

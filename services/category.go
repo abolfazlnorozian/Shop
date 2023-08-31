@@ -67,7 +67,7 @@ func FindAllCategories(c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": result})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "categories", "body": result})
 }
 func findById(root *entities.Response, id primitive.ObjectID) *entities.Response {
 	queue := make([]*entities.Response, 0)

@@ -108,27 +108,23 @@ func LoginUsers(c *gin.Context) {
 	}
 	// Remove leading zero if present
 	phoneNumber := user.PhoneNumber
-	if phoneNumber[0] == '0' {
-		phoneNumber = phoneNumber[1:]
+
+	if phoneNumber[0] != '0' {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is incorrect"})
+		return
 	}
 
-	// Query for the user based on both versions of phone numbers
+	// Construct the query to match both versions of phone numbers
 	query := bson.M{
 		"$or": []bson.M{
-			{"phoneNumber": user.PhoneNumber},  // Original phone number with zero
-			{"phoneNumber": "0" + phoneNumber}, // Phone number without leading zero
+			{"phoneNumber": phoneNumber},     // Entered phone number with leading zero
+			{"phoneNumber": phoneNumber[1:]}, // Entered phone number without leading zero
 		},
 	}
 
 	err := usersCollection.FindOne(ctx, query).Decode(&foundUser)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is incorrect"})
-		return
-	}
-
-	if foundUser.PhoneNumber == "" || phoneNumber != foundUser.PhoneNumber {
-		fmt.Println("Phone number comparison failed.")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "phoneNumber is incorrect"})
 		return
 	}
 
@@ -142,11 +138,7 @@ func LoginUsers(c *gin.Context) {
 	token, refreshToken, _ := auth.GenerateUserAllTokens(foundUser.Id, foundUser.PhoneNumber, foundUser.Role, *foundUser.Username)
 
 	auth.UpdateUserAllTokens(token, refreshToken, foundUser.Role)
-	err = usersCollection.FindOne(ctx, bson.M{"role": foundUser.Role}).Decode(&foundUser)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "token_refreshToken", "body": gin.H{"token": &token, "refreshToken": &refreshToken}})
 
 }

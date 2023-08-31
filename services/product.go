@@ -152,6 +152,7 @@ func GetProductsByOneField(c *gin.Context) {
 	for _, product := range products {
 		customProduct := gin.H{
 			"_id":             product.ID,
+			"notExist":        product.NotExist,
 			"amazing":         product.Amazing,
 			"productType":     product.ProductType,
 			"images":          product.Images,
