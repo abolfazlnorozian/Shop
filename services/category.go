@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -44,6 +43,7 @@ func FindAllCategories(c *gin.Context) {
 		res := &entities.Response{
 			ID:        *val.ID,
 			Images:    val.Images,
+			Parent:    val.Parent,
 			Name:      val.Name,
 			Ancestors: val.Ancestors,
 			Slug:      val.Slug,
@@ -51,6 +51,7 @@ func FindAllCategories(c *gin.Context) {
 			Details:   val.Details,
 			Faq:       val.Faq,
 		}
+
 		var found bool
 		for _, root := range result {
 			parent := findById(root, val.Parent)
@@ -69,7 +70,7 @@ func FindAllCategories(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "categories", "body": result})
 }
-func findById(root *entities.Response, id primitive.ObjectID) *entities.Response {
+func findById(root *entities.Response, id interface{}) *entities.Response {
 	queue := make([]*entities.Response, 0)
 	queue = append(queue, root)
 	for len(queue) > 0 {

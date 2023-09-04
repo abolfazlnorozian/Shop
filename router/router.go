@@ -83,6 +83,7 @@ func BrandRoute(r *gin.RouterGroup) {
 	b := r.Group("/")
 	b.GET("/brands", services.GetBrands)
 }
+
 func PageRoute(r *gin.RouterGroup) {
 	b := r.Group("/")
 	b.GET("/pages/index", services.GetPages)

@@ -31,12 +31,12 @@ type Size struct {
 }
 
 type Content struct {
-	Alt   string   `json:"alt" bson:"alt"`
-	Link  string   `json:"link" bson:"link"`
-	Image ImageUrl `json:"image" bson:"image"`
+	Alt   string    `json:"alt" bson:"alt"`
+	Link  string    `json:"link" bson:"link"`
+	Image ImageCont `json:"image" bson:"image"`
 }
 
-type ImageUrl struct {
+type ImageCont struct {
 	URL string `json:"url" bson:"url"`
 	Id  string `json:"_id" bson:"_id"`
 }
