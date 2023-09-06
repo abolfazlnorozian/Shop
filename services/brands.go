@@ -46,5 +46,5 @@ func GetBrands(c *gin.Context) {
 		brands = append(brands, brandData)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"body": brands, "message": "brands", "success": true})
+	c.JSON(http.StatusCreated, gin.H{"body": brands, "message": "brands", "success": true})
 }

@@ -140,7 +140,7 @@ func GetPages(c *gin.Context) {
 
 	responseBody["body"] = pages
 
-	c.JSON(http.StatusOK, responseBody)
+	c.JSON(http.StatusCreated, responseBody)
 }
 
 // func GetPages(c *gin.Context) {

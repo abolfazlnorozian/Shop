@@ -35,15 +35,17 @@ func AdminRoutes(r *gin.RouterGroup) {
 	u.POST("/login", services.LoginAdmin)
 }
 func Uploader(r *gin.RouterGroup) {
+
 	up := r.Group("/admin")
 	up.Use(auth.AdminAuthenticate())
 	up.POST("/upload", upload.Uploadpath)
+
 	up.GET("/downloads", upload.FindAllImages)
 
 }
 func Downloader(r *gin.RouterGroup) {
 	down := r.Group("/")
-	down.Static("/download", "./public/images")
+	down.Static("/uploads", "./public/images")
 
 }
 func UserRoute(r *gin.RouterGroup) {

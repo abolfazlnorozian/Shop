@@ -68,7 +68,7 @@ func FindAllCategories(c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "categories", "body": result})
+	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "categories", "body": result})
 }
 func findById(root *entities.Response, id interface{}) *entities.Response {
 	queue := make([]*entities.Response, 0)
@@ -112,5 +112,8 @@ func AddCategories(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": title})
+
+}
+func GetOneGategory(c *gin.Context) {
 
 }

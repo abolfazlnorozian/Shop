@@ -72,7 +72,7 @@ func RegisterUsers(c *gin.Context) {
 		return
 	}
 	if count > 0 {
-		c.JSON(http.StatusOK, gin.H{"error": "this PhoneNumber already exists"})
+		//c.JSON(http.StatusOK, gin.H{"error": "this PhoneNumber already exists"})
 		return
 	}
 
