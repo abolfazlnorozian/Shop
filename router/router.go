@@ -10,6 +10,7 @@ import (
 
 func ProRouter(r *gin.RouterGroup) {
 	pro := r.Group("/")
+
 	userAuth := r.Group("/")
 	adminAuth := r.Group("/")
 
@@ -19,6 +20,7 @@ func ProRouter(r *gin.RouterGroup) {
 	adminAuth.POST("/addproduct", services.AddProduct())
 	userAuth.GET("/getProduct/:slug", services.GetProductBySlug)
 	pro.GET("/products", services.GetProductsByOneField)
+
 }
 
 func CategoryRouter(r *gin.RouterGroup) {
@@ -58,6 +60,7 @@ func UserRoute(r *gin.RouterGroup) {
 
 	us.GET("/auth/smsverification", services.RegisterUsers)
 	us.POST("/auth/login", services.LoginUsers)
+	us.OPTIONS("/auth/login", services.LoginUsers)
 	authAdmin.GET("/users2", services.GetAllUsers)
 	authUser.PUT("/updated", services.UpdatedUser)
 	authUser.GET("/users", services.GetUserByToken)

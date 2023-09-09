@@ -151,7 +151,7 @@ func GetCarts(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"products": pro})
+	c.JSON(http.StatusCreated, gin.H{"products": pro})
 }
 
 func DeleteCart(c *gin.Context) {

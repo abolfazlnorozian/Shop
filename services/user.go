@@ -140,6 +140,7 @@ func LoginUsers(c *gin.Context) {
 	auth.UpdateUserAllTokens(token, refreshToken, foundUser.Role)
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "token_refreshToken", "body": gin.H{"token": &token, "refreshToken": &refreshToken}})
+	c.JSON(http.StatusNoContent, gin.H{})
 
 }
 

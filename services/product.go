@@ -94,28 +94,36 @@ func GetProductBySlug(c *gin.Context) {
 }
 
 func GetProductsByOneField(c *gin.Context) {
-	// Retrieve the amazing parameter from the request
-	amazingStr := c.Query("amazing")
-	amazing, err := strconv.ParseBool(amazingStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid 'amazing' parameter"})
-		return
+	var filter bson.M
+
+	// Check if the "amazing" parameter is provided
+	if amazingStr := c.Query("amazing"); amazingStr != "" {
+		amazing, err := strconv.ParseBool(amazingStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid 'amazing' parameter"})
+			return
+		}
+		filter = bson.M{"amazing": amazing}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	// Check if the "categoryId" parameter is provided
+	if categoryStr := c.Query("categoryId"); categoryStr != "" {
+		filter = bson.M{"categoryId": categoryStr}
+	}
 
 	// Pagination parameters from the query
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "40"))
 
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	// Calculate skip value for pagination
 	skip := (page - 1) * limit
 
-	filter := bson.M{"amazing": amazing}
 	var products []entities.Products
 
-	// Perform the database query with pagination
+	// Perform the database query with pagination and the constructed filter
 	results, err := proCollection.Find(ctx, filter, options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to query products"})
