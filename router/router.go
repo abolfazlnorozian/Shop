@@ -10,6 +10,7 @@ import (
 
 func ProRouter(r *gin.RouterGroup) {
 	pro := r.Group("/")
+
 	userAuth := r.Group("/")
 	adminAuth := r.Group("/")
 
@@ -19,6 +20,7 @@ func ProRouter(r *gin.RouterGroup) {
 	adminAuth.POST("/addproduct", services.AddProduct())
 	userAuth.GET("/getProduct/:slug", services.GetProductBySlug)
 	pro.GET("/products", services.GetProductsByOneField)
+
 }
 
 func CategoryRouter(r *gin.RouterGroup) {
@@ -35,15 +37,17 @@ func AdminRoutes(r *gin.RouterGroup) {
 	u.POST("/login", services.LoginAdmin)
 }
 func Uploader(r *gin.RouterGroup) {
+
 	up := r.Group("/admin")
 	up.Use(auth.AdminAuthenticate())
 	up.POST("/upload", upload.Uploadpath)
+
 	up.GET("/downloads", upload.FindAllImages)
 
 }
 func Downloader(r *gin.RouterGroup) {
 	down := r.Group("/")
-	down.Static("/download", "./public/images")
+	down.Static("/uploads", "./public/images")
 
 }
 func UserRoute(r *gin.RouterGroup) {
@@ -56,6 +60,7 @@ func UserRoute(r *gin.RouterGroup) {
 
 	us.GET("/auth/smsverification", services.RegisterUsers)
 	us.POST("/auth/login", services.LoginUsers)
+	us.OPTIONS("/auth/login", services.LoginUsers)
 	authAdmin.GET("/users2", services.GetAllUsers)
 	authUser.PUT("/updated", services.UpdatedUser)
 	authUser.GET("/users", services.GetUserByToken)
@@ -83,6 +88,7 @@ func BrandRoute(r *gin.RouterGroup) {
 	b := r.Group("/")
 	b.GET("/brands", services.GetBrands)
 }
+
 func PageRoute(r *gin.RouterGroup) {
 	b := r.Group("/")
 	b.GET("/pages/index", services.GetPages)
