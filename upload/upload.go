@@ -109,6 +109,49 @@ func FindAllImages(c *gin.Context) {
 	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"docs": &img, "totalDocs": count, "limit": float64(limit), "totalPages": int(roundedup)}})
 
 }
-func FindOneImage(c *gin.Context) {
 
-}
+// func FindOneImage(c *gin.Context) {
+// 	filename := c.Param("filename")
+// 	heightStr := c.DefaultQuery("height", "0") // Default to 0 for no resizing
+// 	widthStr := c.DefaultQuery("width", "0")   // Default to 0 for no resizing
+
+// 	height, err := strconv.Atoi(heightStr)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid height parameter"})
+// 		return
+// 	}
+
+// 	width, err := strconv.Atoi(widthStr)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid width parameter"})
+// 		return
+// 	}
+
+// 	imagePath := "./public/images/" + filename
+// 	file, err := os.Open(imagePath)
+// 	if err != nil {
+// 		c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
+// 		return
+// 	}
+// 	defer file.Close()
+
+// 	// Decode the image
+// 	img, _, err := image.Decode(file)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error decoding image"})
+// 		return
+// 	}
+
+// 	// Resize the image if necessary
+// 	if height > 0 || width > 0 {
+// 		resizedImg := resize.Resize(uint(width), uint(height), img, resize.Lanczos3)
+// 		img = resizedImg
+// 	}
+
+// 	// Encode the image as JPEG and send it in the response
+// 	c.Writer.Header().Set("Content-Type", "image/jpeg")
+// 	if err := jpeg.Encode(c.Writer, img, nil); err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error encoding image"})
+// 		return
+// 	}
+// }

@@ -15,6 +15,7 @@ import (
 func main() {
 	r := gin.Default()
 	v1 := r.Group("api")
+	v2 := r.Group("/")
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalln("error loading .env file")
@@ -30,7 +31,7 @@ func main() {
 	router.CategoryRouter(v1)
 	router.AdminRoutes(v1)
 	router.Uploader(v1)
-	router.Downloader(v1)
+	router.Downloader(v2)
 	router.UserRoute(v1)
 	router.OrderRouter(v1)
 	router.CartRouter(v1)

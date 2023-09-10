@@ -48,6 +48,7 @@ func Uploader(r *gin.RouterGroup) {
 func Downloader(r *gin.RouterGroup) {
 	down := r.Group("/")
 	down.Static("/uploads", "./public/images")
+	//down.GET("/uploads/:filename", upload.FindOneImage)
 
 }
 func UserRoute(r *gin.RouterGroup) {
