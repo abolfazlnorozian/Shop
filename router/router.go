@@ -18,7 +18,7 @@ func ProRouter(r *gin.RouterGroup) {
 	//userAuth.Use(auth.UserAuthenticate())
 	adminAuth.GET("/allproduct", services.FindAllProducts)
 	adminAuth.POST("/addproduct", services.AddProduct())
-	userAuth.GET("/getProduct/:slug", services.GetProductBySlug)
+	userAuth.GET("/products/:slug", services.GetProductBySlug)
 	pro.GET("/products", services.GetProductsByOneField)
 
 }
@@ -93,4 +93,9 @@ func BrandRoute(r *gin.RouterGroup) {
 func PageRoute(r *gin.RouterGroup) {
 	b := r.Group("/")
 	b.GET("/pages/index", services.GetPages)
+}
+func CommentRoute(r *gin.RouterGroup) {
+	c := r.Group("/")
+	c.Use(auth.UserAuthenticate())
+	c.POST("/comments", services.AddComment)
 }

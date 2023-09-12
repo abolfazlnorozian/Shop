@@ -14,9 +14,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var cartCollection *mongo.Collection = database.GetCollection(database.DB, "brands")
+var cartCollection *mongo.Collection = database.GetCollection(database.DB, "carts")
 var prodCollection *mongo.Collection = database.GetCollection(database.DB, "products")
-var caCollection *mongo.Collection = database.GetCollection(database.DB, "brandschemas")
+
+//var caCollection *mongo.Collection = database.GetCollection(database.DB, "brandschemas")
 
 func AddCatrs(c *gin.Context) {
 	var cart entities.Catrs

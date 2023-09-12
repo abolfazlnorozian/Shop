@@ -37,6 +37,7 @@ func main() {
 	router.CartRouter(v1)
 	router.BrandRoute(v1)
 	router.PageRoute(v1)
+	router.CommentRoute(v1)
 
 	go func() {
 		database.MD()

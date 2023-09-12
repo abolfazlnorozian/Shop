@@ -17,8 +17,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var ordersCollection *mongo.Collection = database.GetCollection(database.DB, "pages")
-var XCollection *mongo.Collection = database.GetCollection(database.DB, "brands")
+var ordersCollection *mongo.Collection = database.GetCollection(database.DB, "orders")
+var XCollection *mongo.Collection = database.GetCollection(database.DB, "users")
 var produCollection *mongo.Collection = database.GetCollection(database.DB, "products")
 var countersCollection *mongo.Collection = database.GetCollection(database.DB, "counters")
 var addusersCollection *mongo.Collection = database.GetCollection(database.DB, "brandschemas")
@@ -108,7 +108,7 @@ func AddOrder(c *gin.Context) {
 	order.V = 0
 
 	var cart entities.Catrs
-	err = brandCollection.FindOne(c, bson.M{"username": username}).Decode(&cart)
+	err = XCollection.FindOne(c, bson.M{"username": username}).Decode(&cart)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cart"})
 		return
@@ -180,7 +180,7 @@ func AddOrder(c *gin.Context) {
 	}
 
 	// Remove the shopping cart from the "brandCollection"
-	_, err = brandCollection.DeleteOne(c, bson.M{"username": username})
+	_, err = XCollection.DeleteOne(c, bson.M{"username": username})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove cart"})
 		return
