@@ -13,7 +13,8 @@ import (
 )
 
 var commentCollection *mongo.Collection = database.GetCollection(database.DB, "comments")
-var prouCollection *mongo.Collection = database.GetCollection(database.DB, "products")
+
+//var proCollection *mongo.Collection = database.GetCollection(database.DB, "products")
 
 func AddComment(c *gin.Context) {
 	var message entities.Comments
@@ -48,7 +49,7 @@ func AddComment(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"body": message})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "comment_added", "body": message})
 
 }
 

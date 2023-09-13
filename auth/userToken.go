@@ -81,7 +81,7 @@ func GenerateUserAllTokens(id primitive.ObjectID, phoneNumber string, role strin
 		return
 	}
 
-	return token, refreshToken, err
+	return "bearer " + token, "bearer " + refreshToken, nil
 }
 
 func UpdateUserAllTokens(signedToken string, signedRefreshToken string, role string) {

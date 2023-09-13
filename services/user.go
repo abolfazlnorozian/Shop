@@ -38,61 +38,76 @@ func RegisterUsers(c *gin.Context) {
 		return
 	}
 
-	newVerifycode := helpers.GenerateRandomCode(4)
-	fmt.Println(newVerifycode)
-	hashedCode, err := helpers.HashPassword(newVerifycode)
-	fmt.Println(hashedCode)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate verify code"})
-		return
-	}
 	// Ensure that the phone number is captured correctly from the API request
 	phoneNumber := c.Query("phone")
 	if len(phoneNumber) >= 10 {
 		phoneNumber = phoneNumber[len(phoneNumber)-10:]
 	}
 	user.PhoneNumber = phoneNumber
-	user.VerifyCode = &hashedCode
 
 	user.Role = "user"
-	// Update the user document in the database
-	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "verifyCode", Value: user.VerifyCode}, bson.E{Key: "role", Value: user.Role}}}}
 
-	_, err = usersCollection.UpdateOne(ctx, bson.D{bson.E{Key: "phoneNumber", Value: user.PhoneNumber}}, update)
-	if err != nil {
-		log.Panic(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
+	// Check if the phone number already exists in the database
 	count, err := usersCollection.CountDocuments(ctx, bson.M{"phoneNumber": user.PhoneNumber})
 	if err != nil {
 		log.Panic(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error occured while cheking for the email"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error occurred while checking for the phone number"})
 		return
 	}
+
 	if count > 0 {
-		//c.JSON(http.StatusOK, gin.H{"error": "this PhoneNumber already exists"})
-		return
+		// Phone number already exists, generate a new verification code and username
+		newVerifycode := helpers.GenerateRandomCode(4)
+		fmt.Println(newVerifycode)
+		hashedCode, err := helpers.HashPassword(newVerifycode)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate verify code"})
+			return
+		}
+		user.VerifyCode = &hashedCode
+
+		randomUsername := helpers.GenerateRandomUsername(user.PhoneNumber)
+		user.Username = &randomUsername
+
+		// Update the user document in the database with the new verification code and username
+		update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "verifyCode", Value: user.VerifyCode}, bson.E{Key: "role", Value: user.Role}, bson.E{Key: "username", Value: user.Username}}}}
+
+		_, err = usersCollection.UpdateOne(ctx, bson.D{bson.E{Key: "phoneNumber", Value: user.PhoneNumber}}, update)
+		if err != nil {
+			log.Panic(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"success": "true", "message": "username", "body": gin.H{"username": &randomUsername, "password": newVerifycode}})
+	} else {
+		// Phone number doesn't exist, generate a new verification code and save the user
+		newVerifycode := helpers.GenerateRandomCode(4)
+		fmt.Println(newVerifycode)
+		hashedCode, err := helpers.HashPassword(newVerifycode)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate verify code"})
+			return
+		}
+		user.VerifyCode = &hashedCode
+
+		randomUsername := helpers.GenerateRandomUsername(user.PhoneNumber)
+		user.Username = &randomUsername
+
+		user.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		user.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		user.Id = primitive.NewObjectID()
+		user.Sex = -1
+
+		_, insertErr := usersCollection.InsertOne(ctx, user)
+		if insertErr != nil {
+			msg := fmt.Sprintf("User item was not created")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"success": "true", "message": "username", "body": gin.H{"username": &randomUsername, "password": newVerifycode}})
 	}
-
-	randomUsername := helpers.GenerateRandomUsername(user.PhoneNumber)
-	user.Username = &randomUsername
-
-	user.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	user.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	user.Id = primitive.NewObjectID()
-	// userType := "user"
-
-	user.Sex = -1
-	_, insertErr := usersCollection.InsertOne(ctx, user)
-	if insertErr != nil {
-		msg := fmt.Sprintf("User item was not created")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"success": "true", "message": "username", "body": gin.H{"username": &randomUsername, "password": newVerifycode}})
 }
 
 func LoginUsers(c *gin.Context) {

@@ -131,24 +131,6 @@ func fetchCategoryDetails(ctx context.Context, categoryIDs []primitive.ObjectID)
 	return categories, nil
 }
 
-// func GetProductBySlug(c *gin.Context) {
-// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 	defer cancel()
-
-// 	slug := c.Param("slug")
-// 	var pro entities.Products
-
-// 	//slg := strings(slug)
-
-// 	err := proCollection.FindOne(ctx, bson.M{"slug": slug}).Decode(&pro)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	c.JSON(http.StatusOK, pro)
-
-// }
-
 func GetProductsByOneField(c *gin.Context) {
 	var filter bson.M
 
