@@ -241,7 +241,3 @@ func GetProductsByOneField(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response)
 }
-
-func AddProductToFavorite(c *gin.Context) {
-
-}

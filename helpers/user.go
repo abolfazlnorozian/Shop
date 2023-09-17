@@ -26,3 +26,11 @@ func VerifyPassword(userPassword string, providedPassword string) (bool, string)
 	return check, msg
 
 }
+
+// func VerifyPassword(userPassword string, providedPassword string) (bool, string) {
+// 	err := bcrypt.CompareHashAndPassword([]byte(providedPassword), []byte(userPassword))
+// 	if err != nil {
+// 		return false, "Invalid verification code"
+// 	}
+// 	return true, ""
+// }

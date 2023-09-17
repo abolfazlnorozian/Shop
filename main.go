@@ -38,6 +38,7 @@ func main() {
 	router.BrandRoute(v1)
 	router.PageRoute(v1)
 	router.CommentRoute(v1)
+	router.FavoriteRoute(v1)
 
 	go func() {
 		database.MD()

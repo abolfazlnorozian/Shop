@@ -19,7 +19,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var usersCollection *mongo.Collection = database.GetCollection(database.DB, "users")
+var usersCollection *mongo.Collection = database.GetCollection(database.DB, "brands")
 var validates = validator.New()
 
 func RegisterUsers(c *gin.Context) {
@@ -44,6 +44,13 @@ func RegisterUsers(c *gin.Context) {
 		phoneNumber = phoneNumber[len(phoneNumber)-10:]
 	}
 	user.PhoneNumber = phoneNumber
+	user.Favorites = []*primitive.ObjectID{}
+	user.ActiveSession = []string{}
+	user.FcmRegistratinToken = "none"
+	user.Address = []entities.Addr{}
+	user.Name = ""
+	user.LastName = ""
+	user.Email = ""
 
 	user.Role = "user"
 
@@ -124,7 +131,11 @@ func LoginUsers(c *gin.Context) {
 	// Remove leading zero if present
 	phoneNumber := user.PhoneNumber
 
-	if phoneNumber[0] != '0' {
+	// if phoneNumber[0] != '0' {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is incorrect"})
+	// 	return
+	// }
+	if len(phoneNumber) == 0 || phoneNumber[0] != '0' {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is incorrect"})
 		return
 	}
@@ -155,9 +166,54 @@ func LoginUsers(c *gin.Context) {
 	auth.UpdateUserAllTokens(token, refreshToken, foundUser.Role)
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "token_refreshToken", "body": gin.H{"token": &token, "refreshToken": &refreshToken}})
-	c.JSON(http.StatusNoContent, gin.H{})
+	//c.JSON(http.StatusNoContent, gin.H{})
 
 }
+
+// func LoginUsers(c *gin.Context) {
+// 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+// 	defer cancel()
+
+// 	var user entities.Users
+// 	var foundUser entities.Users
+
+// 	if err := c.Bind(&user); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+// 		return
+// 	}
+
+// 	// Check if the provided user code is empty or not exactly 4 digits
+// 	if len(*user.VerifyCode) != 4 {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Verification code must be exactly 4 digits"})
+// 		return
+// 	}
+
+// 	// Construct the query to find a user with the matching verification code
+// 	query := bson.M{
+// 		"verifyCode": user.VerifyCode, // Assuming user.VerifyCode is a plain text 4-digit code
+// 	}
+
+// 	err := usersCollection.FindOne(ctx, query).Decode(&foundUser)
+// 	if err != nil {
+// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid verification code"})
+// 		return
+// 	}
+
+// 	// Now, compare the provided verification code with the hashed code in the database
+// 	match, errMsg := helpers.VerifyPassword(*user.VerifyCode, *foundUser.VerifyCode)
+
+// 	if !match {
+// 		c.JSON(http.StatusUnauthorized, gin.H{"error": errMsg})
+// 		return
+// 	}
+
+// 	// Authentication successful, proceed with token generation
+// 	token, refreshToken, _ := auth.GenerateUserAllTokens(foundUser.Id, foundUser.PhoneNumber, foundUser.Role, *foundUser.Username)
+
+// 	auth.UpdateUserAllTokens(token, refreshToken, foundUser.Role)
+
+// 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "token_refreshToken", "body": gin.H{"token": &token, "refreshToken": &refreshToken}})
+// }
 
 func GetAllUsers(c *gin.Context) {
 	if err := auth.CheckUserType(c, "admin"); err != nil {

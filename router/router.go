@@ -95,7 +95,15 @@ func PageRoute(r *gin.RouterGroup) {
 	b.GET("/pages/index", services.GetPages)
 }
 func CommentRoute(r *gin.RouterGroup) {
+	com := r.Group("/")
 	c := r.Group("/")
 	c.Use(auth.UserAuthenticate())
-	c.POST("/comments", services.AddComment)
+	c.POST("products/:productID/comments", services.AddComment)
+	//com.OPTIONS("products/:productID/comments", services.AddComment)
+	com.GET("products/:slug/comments", services.GetComment)
+}
+func FavoriteRoute(r *gin.RouterGroup) {
+	b := r.Group("/")
+	b.Use(auth.UserAuthenticate())
+	b.POST("/users/favorites", services.AddProductToFavorite)
 }

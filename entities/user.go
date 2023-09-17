@@ -22,8 +22,9 @@ type Users struct {
 	V                   int                   `json:"__v" bson:"__v"`
 	LastSendSms         time.Time             `json:"LastSendSmsVerificationTime" bson:"LastSendSmsVerificationTime"`
 	CountGetSmsInDay    int                   `json:"countGetSmsInDay" bson:"countGetSmsInDay"`
-	LastName            *string               `json:"lastname" bson:"lastname"`
-	Name                *string               `json:"name" bson:"name"`
+	Email               string                `json:"email" bson:"email"`
+	LastName            string                `json:"lastname" bson:"lastname"`
+	Name                string                `json:"name" bson:"name"`
 }
 
 type Addr struct {
