@@ -53,9 +53,9 @@ func Downloader(r *gin.RouterGroup) {
 }
 func UserRoute(r *gin.RouterGroup) {
 	us := r.Group("/users")
-
+	//us.Use(auth.UserAuthenticate())
 	authUser := r.Group("/")
-	authUser.Use(auth.UserAuthenticate())
+	authUser.Use(auth.UserAuthenticate)
 	authAdmin := r.Group("/")
 	authAdmin.Use(auth.AdminAuthenticate())
 
@@ -65,23 +65,26 @@ func UserRoute(r *gin.RouterGroup) {
 	authAdmin.GET("/users2", services.GetAllUsers)
 	authUser.PUT("/updated", services.UpdatedUser)
 	authUser.GET("/users", services.GetUserByToken)
+	authUser.OPTIONS("/users", services.GetUserByToken)
 
 }
 func OrderRouter(r *gin.RouterGroup) {
 	or := r.Group("/")
 	ordr := r.Group("/")
 	or.Use(auth.AdminAuthenticate())
-	ordr.Use(auth.UserAuthenticate())
+	ordr.Use(auth.UserAuthenticate)
 
 	or.GET("orders", services.FindordersByadmin)
 	ordr.POST("addorder", services.AddOrder)
 }
 func CartRouter(r *gin.RouterGroup) {
 	ca := r.Group("/users")
-	ca.Use(auth.UserAuthenticate())
+	ca.Use(auth.UserAuthenticate)
 
-	ca.POST("addCart", services.AddCatrs)
+	ca.POST("/carts", services.AddCatrs)
 	ca.GET("/carts", services.GetCarts)
+	ca.OPTIONS("/carts", services.GetCarts)
+
 	ca.DELETE("/deletedCart", services.DeleteCart)
 }
 
@@ -97,13 +100,13 @@ func PageRoute(r *gin.RouterGroup) {
 func CommentRoute(r *gin.RouterGroup) {
 	com := r.Group("/")
 	c := r.Group("/")
-	c.Use(auth.UserAuthenticate())
+	c.Use(auth.UserAuthenticate)
 	c.POST("products/:productID/comments", services.AddComment)
 	//com.OPTIONS("products/:productID/comments", services.AddComment)
 	com.GET("products/:slug/comments", services.GetComment)
 }
 func FavoriteRoute(r *gin.RouterGroup) {
 	b := r.Group("/")
-	b.Use(auth.UserAuthenticate())
+	b.Use(auth.UserAuthenticate)
 	b.POST("/users/favorites", services.AddProductToFavorite)
 }

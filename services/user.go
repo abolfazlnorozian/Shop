@@ -19,7 +19,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var usersCollection *mongo.Collection = database.GetCollection(database.DB, "brands")
+var usersCollection *mongo.Collection = database.GetCollection(database.DB, "users")
 var validates = validator.New()
 
 func RegisterUsers(c *gin.Context) {
@@ -27,7 +27,7 @@ func RegisterUsers(c *gin.Context) {
 	defer cancel()
 	var user entities.Users
 
-	if err := c.ShouldBind(&user); err != nil {
+	if err := c.Bind(&user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "not found"})
 		return
 	}
@@ -73,11 +73,19 @@ func RegisterUsers(c *gin.Context) {
 		}
 		user.VerifyCode = &hashedCode
 
-		randomUsername := helpers.GenerateRandomUsername(user.PhoneNumber)
-		user.Username = &randomUsername
-
+		// Phone number already exists, retrieve the username from the database
+		var existingUser entities.Users
+		err = usersCollection.FindOne(ctx, bson.M{"phoneNumber": user.PhoneNumber}).Decode(&existingUser)
+		if err != nil {
+			log.Panic(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error occurred while retrieving username"})
+			return
+		}
+		// Use the retrieved username
+		randomUsername := existingUser.Username
+		//bson.E{Key: "username", Value: user.Username}
 		// Update the user document in the database with the new verification code and username
-		update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "verifyCode", Value: user.VerifyCode}, bson.E{Key: "role", Value: user.Role}, bson.E{Key: "username", Value: user.Username}}}}
+		update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "verifyCode", Value: user.VerifyCode}, bson.E{Key: "role", Value: user.Role}}}}
 
 		_, err = usersCollection.UpdateOne(ctx, bson.D{bson.E{Key: "phoneNumber", Value: user.PhoneNumber}}, update)
 		if err != nil {
@@ -124,39 +132,28 @@ func LoginUsers(c *gin.Context) {
 	var user entities.Users
 	var foundUser entities.Users
 
-	if err := c.Bind(&user); err != nil {
+	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	// Remove leading zero if present
-	phoneNumber := user.PhoneNumber
 
-	// if phoneNumber[0] != '0' {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is incorrect"})
-	// 	return
-	// }
-	if len(phoneNumber) == 0 || phoneNumber[0] != '0' {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is incorrect"})
+	// // Check if the username field is empty
+	if user.Username == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username is required"})
 		return
 	}
-
-	// Construct the query to match both versions of phone numbers
-	query := bson.M{
-		"$or": []bson.M{
-			{"phoneNumber": phoneNumber},     // Entered phone number with leading zero
-			{"phoneNumber": phoneNumber[1:]}, // Entered phone number without leading zero
-		},
-	}
+	// Construct the query to match the username
+	query := bson.M{"username": user.Username}
 
 	err := usersCollection.FindOne(ctx, query).Decode(&foundUser)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is incorrect"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	passwordIsValid, _ := helpers.VerifyPassword(*user.VerifyCode, *foundUser.VerifyCode)
-	defer cancle()
-	if passwordIsValid != true {
+	// defer cancle()
+	if !passwordIsValid {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Password  is incorrect"})
 		return
 	}
@@ -169,51 +166,6 @@ func LoginUsers(c *gin.Context) {
 	//c.JSON(http.StatusNoContent, gin.H{})
 
 }
-
-// func LoginUsers(c *gin.Context) {
-// 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-// 	defer cancel()
-
-// 	var user entities.Users
-// 	var foundUser entities.Users
-
-// 	if err := c.Bind(&user); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-// 		return
-// 	}
-
-// 	// Check if the provided user code is empty or not exactly 4 digits
-// 	if len(*user.VerifyCode) != 4 {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Verification code must be exactly 4 digits"})
-// 		return
-// 	}
-
-// 	// Construct the query to find a user with the matching verification code
-// 	query := bson.M{
-// 		"verifyCode": user.VerifyCode, // Assuming user.VerifyCode is a plain text 4-digit code
-// 	}
-
-// 	err := usersCollection.FindOne(ctx, query).Decode(&foundUser)
-// 	if err != nil {
-// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid verification code"})
-// 		return
-// 	}
-
-// 	// Now, compare the provided verification code with the hashed code in the database
-// 	match, errMsg := helpers.VerifyPassword(*user.VerifyCode, *foundUser.VerifyCode)
-
-// 	if !match {
-// 		c.JSON(http.StatusUnauthorized, gin.H{"error": errMsg})
-// 		return
-// 	}
-
-// 	// Authentication successful, proceed with token generation
-// 	token, refreshToken, _ := auth.GenerateUserAllTokens(foundUser.Id, foundUser.PhoneNumber, foundUser.Role, *foundUser.Username)
-
-// 	auth.UpdateUserAllTokens(token, refreshToken, foundUser.Role)
-
-// 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "token_refreshToken", "body": gin.H{"token": &token, "refreshToken": &refreshToken}})
-// }
 
 func GetAllUsers(c *gin.Context) {
 	if err := auth.CheckUserType(c, "admin"); err != nil {
@@ -359,8 +311,7 @@ func GetUserByToken(c *gin.Context) {
 	// Replace `client` and `usersCollection` with your own client and collection objects
 	// You may need to initialize the MongoDB client and collection separately
 
-	// Create a context with a timeout
-	ctx, cancel := context.WithTimeout(c, time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	// Assuming `usersCollection` is your MongoDB collection
@@ -385,6 +336,56 @@ func GetUserByToken(c *gin.Context) {
 	if len(user.Address) == 0 {
 		user.Address = []entities.Addr{}
 	}
+	// Create a custom JSON response map
+	jsonResponse := gin.H{
+		"_id":                         user.Id,
+		"activeSession":               user.ActiveSession,
+		"fcmRegistrationToken":        user.FcmRegistratinToken,
+		"favoritesProducts":           user.Favorites,
+		"username":                    user.Username,
+		"verifyCode":                  user.VerifyCode, // Map "verifyCode" to the "password" field in the response
+		"phoneNumber":                 user.PhoneNumber,
+		"sex":                         user.Sex,
+		"role":                        user.Role,
+		"addresses":                   user.Address,
+		"createdAt":                   user.CreatedAt,
+		"updatedAt":                   user.UpdatedAt,
+		"__v":                         user.V,
+		"LastSendSmsVerificationTime": user.LastSendSms,
+		"lastname":                    user.LastName,
+		"name":                        user.Name,
+	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, jsonResponse)
 }
+
+// // Debug: Print the value of user.PhoneNumber before trimming
+// fmt.Printf("PhoneNumber before trimming: %s\n", user.PhoneNumber)
+// // Trim leading and trailing whitespace from phoneNumber
+// phoneNumber := strings.TrimSpace(user.PhoneNumber)
+
+// fmt.Printf("PhoneNumber after trimming: %s\n", phoneNumber)
+
+// // if phoneNumber[0] != '0' {
+// // 	c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is incorrect"})
+// // 	return
+// // }
+
+// if len(phoneNumber) == 0 {
+// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is empty"})
+// 	return
+// }
+
+// if phoneNumber[0] != '0' {
+// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is incorrect"})
+// 	log.Println(phoneNumber)
+// 	return
+// }
+
+// // Construct the query to match both versions of phone numbers
+// query := bson.M{
+// 	"$or": []bson.M{
+// 		{"phoneNumber": phoneNumber},     // Entered phone number with leading zero
+// 		{"phoneNumber": phoneNumber[1:]}, // Entered phone number without leading zero
+// 	},
+// }
