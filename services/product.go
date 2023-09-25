@@ -13,11 +13,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var proCollection *mongo.Collection = database.GetCollection(database.DB, "products")
+
+type ProductWithCategories struct {
+	entities.Products
+	Categories []entities.Category `json:"categories"`
+}
 
 func FindAllProducts(c *gin.Context) {
 	if err := auth.CheckUserType(c, "admin"); err != nil {
@@ -74,23 +80,55 @@ func AddProduct() gin.HandlerFunc {
 
 	}
 }
-
 func GetProductBySlug(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	slug := c.Param("slug")
-	var pro entities.Products
+	var proWithCategories ProductWithCategories
 
-	//slg := strings(slug)
-
-	err := proCollection.FindOne(ctx, bson.M{"slug": slug}).Decode(&pro)
+	err := proCollection.FindOne(ctx, bson.M{"slug": slug}).Decode(&proWithCategories.Products)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, pro)
 
+	// Fetch category details and store them in the Categories field
+	categories, err := fetchCategoryDetails(ctx, proWithCategories.Category)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Assign the fetched categories to the Categories field
+	proWithCategories.Categories = categories
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "product", "body": proWithCategories})
+}
+
+// Function to fetch category details from the category collection
+func fetchCategoryDetails(ctx context.Context, categoryIDs []primitive.ObjectID) ([]entities.Category, error) {
+	var categories []entities.Category
+
+	cursor, err := categoryCollection.Find(ctx, bson.M{"_id": bson.M{"$in": categoryIDs}})
+	if err != nil {
+		return nil, err
+	}
+
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var category entities.Category
+		if err := cursor.Decode(&category); err != nil {
+			return nil, err
+		}
+		categories = append(categories, category)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return categories, nil
 }
 
 func GetProductsByOneField(c *gin.Context) {

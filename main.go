@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"shop/database"
 
@@ -24,6 +25,8 @@ func main() {
 	if port == "" {
 		port = "8000"
 	}
+
+	v1.Use(corsMiddleware())
 	// Enable CORS for your API group
 	v1.Use(cors.Default())
 
@@ -37,6 +40,8 @@ func main() {
 	router.CartRouter(v1)
 	router.BrandRoute(v1)
 	router.PageRoute(v1)
+	router.CommentRoute(v1)
+	router.FavoriteRoute(v1)
 
 	go func() {
 		database.MD()
@@ -44,4 +49,20 @@ func main() {
 	}()
 
 	r.Run(":" + port)
+}
+
+func corsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:4000")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusOK)
+			c.AbortWithStatus(http.StatusCreated)
+			return
+		}
+
+		c.Next()
+	}
 }

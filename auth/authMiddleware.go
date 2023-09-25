@@ -29,28 +29,27 @@ func AdminAuthenticate() gin.HandlerFunc {
 	}
 
 }
-func UserAuthenticate() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		clientToken := c.Request.Header.Get("token")
-		if clientToken == "" {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("no Authorization header provided")})
-			c.Abort()
-			return
-		}
-		uclaims, err := ValidateUserToken(clientToken)
-		if err != "" {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-			c.Abort()
-			return
-		}
+func UserAuthenticate(c *gin.Context) {
 
-		c.Set("phoneNumber", uclaims.PhoneNumber)
-		c.Set("role", uclaims.Role)
-		c.Set("tokenClaims", uclaims)
-
-		c.Next()
-
+	clientToken := c.Request.Header.Get("authorization")
+	if clientToken == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("no Authorization header provided")})
+		c.Abort()
+		return
 	}
+	uclaims, err := ValidateUserToken(clientToken)
+	if err != "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.Abort()
+		return
+	}
+
+	c.Set("phoneNumber", uclaims.PhoneNumber)
+	c.Set("username", uclaims.Username)
+	c.Set("role", uclaims.Role)
+	c.Set("tokenClaims", uclaims)
+
+	c.Next()
 
 }
 

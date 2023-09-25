@@ -14,9 +14,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var cartCollection *mongo.Collection = database.GetCollection(database.DB, "brands")
+var cartCollection *mongo.Collection = database.GetCollection(database.DB, "carts")
 var prodCollection *mongo.Collection = database.GetCollection(database.DB, "products")
-var caCollection *mongo.Collection = database.GetCollection(database.DB, "brandschemas")
+
+//var caCollection *mongo.Collection = database.GetCollection(database.DB, "brandschemas")
 
 func AddCatrs(c *gin.Context) {
 	var cart entities.Catrs
@@ -82,7 +83,7 @@ func AddCatrs(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": existingDoc})
+		c.JSON(http.StatusCreated, gin.H{"success": true, "message": "cart_edited", "body": gin.H{}})
 		return
 	}
 
@@ -96,7 +97,7 @@ func AddCatrs(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": cart})
+	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "cart_edited", "body": gin.H{}})
 }
 
 func GetCarts(c *gin.Context) {
@@ -122,6 +123,22 @@ func GetCarts(c *gin.Context) {
 		return
 	}
 	defer cur.Close(c)
+
+	// Check if the user has an empty cart
+	if !cur.Next(c) {
+		// User has an empty cart, return the specific response
+		c.JSON(http.StatusCreated, gin.H{
+			"success": true,
+			"message": "cart",
+			"body": []map[string]interface{}{
+				{
+					"variations":  []interface{}{},
+					"mixproducts": []interface{}{},
+				},
+			},
+		})
+		return
+	}
 
 	for cur.Next(c) {
 		var cart entities.Catrs
@@ -151,8 +168,63 @@ func GetCarts(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"products": pro})
+	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "cart", "body": pro})
 }
+
+// func GetCarts(c *gin.Context) {
+// 	var pro []entities.Products
+
+// 	tokenClaims, exists := c.Get("tokenClaims")
+// 	if !exists {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+// 		return
+// 	}
+
+// 	claims, ok := tokenClaims.(*auth.SignedUserDetails)
+// 	if !ok {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+// 		return
+// 	}
+
+// 	username := claims.Username
+
+// 	cur, err := cartCollection.Find(c, bson.M{"username": username})
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch carts"})
+// 		return
+// 	}
+// 	defer cur.Close(c)
+
+// 	for cur.Next(c) {
+// 		var cart entities.Catrs
+// 		err := cur.Decode(&cart)
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode cart"})
+// 			return
+// 		}
+
+// 		for _, product := range cart.Products {
+// 			productID := product.ProductId
+
+// 			// Retrieve product data from "products" collection based on productID
+// 			var retrievedProduct entities.Products
+// 			err := prodCollection.FindOne(c, bson.M{"_id": productID}).Decode(&retrievedProduct)
+// 			if err != nil {
+// 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch product"})
+// 				return
+// 			}
+
+// 			pro = append(pro, retrievedProduct)
+// 		}
+// 	}
+
+// 	if len(pro) == 0 {
+// 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusCreated, gin.H{"products": pro})
+// }
 
 func DeleteCart(c *gin.Context) {
 	var cart entities.Catrs

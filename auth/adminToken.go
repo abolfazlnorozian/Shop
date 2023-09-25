@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"shop/database"
+	"strings"
 
 	"time"
 
@@ -50,6 +51,16 @@ func VerifyPassword(userPassword string, providedPassword string) (bool, string)
 }
 
 func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
+
+	fmt.Println("Original token:", signedToken)
+
+	// Check if the token starts with "bearer "
+	if strings.HasPrefix(signedToken, "bearer ") {
+		// Remove the "bearer " prefix
+		signedToken = strings.TrimPrefix(signedToken, "bearer ")
+	}
+
+	fmt.Println("Token after prefix removal:", signedToken)
 	token, err := jwt.ParseWithClaims(
 		signedToken,
 		&SignedDetails{},
@@ -99,7 +110,7 @@ func GenerateAllTokens(username string, role string) (signedToken string, signed
 		return
 	}
 
-	return token, refreshToken, err
+	return "bearer " + token, "bearer " + refreshToken, err
 }
 
 func UpdateAllTokens(signedToken string, signedRefreshToken string, role string) {

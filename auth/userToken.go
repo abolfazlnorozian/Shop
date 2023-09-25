@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"shop/database"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -29,6 +30,11 @@ type SignedUserDetails struct {
 }
 
 func ValidateUserToken(signedToken string) (claims *SignedUserDetails, msg string) {
+	// Check if the token starts with "bearer "
+	if strings.HasPrefix(signedToken, "bearer ") {
+		// Remove the "bearer " prefix
+		signedToken = strings.TrimPrefix(signedToken, "bearer ")
+	}
 	token, err := jwt.ParseWithClaims(
 		signedToken,
 		&SignedUserDetails{},
@@ -81,7 +87,7 @@ func GenerateUserAllTokens(id primitive.ObjectID, phoneNumber string, role strin
 		return
 	}
 
-	return token, refreshToken, err
+	return "bearer " + token, "bearer " + refreshToken, nil
 }
 
 func UpdateUserAllTokens(signedToken string, signedRefreshToken string, role string) {
