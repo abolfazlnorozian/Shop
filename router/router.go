@@ -19,7 +19,7 @@ func ProRouter(r *gin.RouterGroup) {
 	adminAuth.GET("/allproduct", services.FindAllProducts)
 	adminAuth.POST("/addproduct", services.AddProduct())
 	userAuth.GET("/products/:slug", services.GetProductBySlug)
-	pro.GET("/products", services.GetProductsByOneField)
+	pro.GET("/products", services.GetProductsByFields)
 
 }
 

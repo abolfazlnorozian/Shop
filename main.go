@@ -8,7 +8,6 @@ import (
 
 	"shop/router"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -27,8 +26,9 @@ func main() {
 	}
 
 	v1.Use(corsMiddleware())
-	// Enable CORS for your API group
-	v1.Use(cors.Default())
+	v2.Use(corsMiddleware())
+	// // Enable CORS for your API group
+	// v1.Use(cors.Default())
 
 	router.ProRouter(v1)
 	router.CategoryRouter(v1)

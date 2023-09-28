@@ -60,3 +60,7 @@ func AddProductToFavorite(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Product added to favorites"})
 }
+
+func GetFavorites(c *gin.Context) {
+
+}
