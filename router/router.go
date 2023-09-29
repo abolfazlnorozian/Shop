@@ -11,14 +11,14 @@ import (
 func ProRouter(r *gin.RouterGroup) {
 	pro := r.Group("/")
 
-	userAuth := r.Group("/")
+	//userAuth := r.Group("/")
 	adminAuth := r.Group("/")
 
 	adminAuth.Use(auth.AdminAuthenticate())
 	//userAuth.Use(auth.UserAuthenticate())
 	adminAuth.GET("/allproduct", services.FindAllProducts)
 	adminAuth.POST("/addproduct", services.AddProduct())
-	userAuth.GET("/products/:slug", services.GetProductBySlug)
+	pro.GET("/products/:slug", services.GetProductBySlug)
 	pro.GET("/products", services.GetProductsByFields)
 
 }
@@ -109,4 +109,5 @@ func FavoriteRoute(r *gin.RouterGroup) {
 	b := r.Group("/")
 	b.Use(auth.UserAuthenticate)
 	b.POST("/users/favorites", services.AddProductToFavorite)
+	b.OPTIONS("users/favorites", services.AddProductToFavorite)
 }
