@@ -176,5 +176,49 @@ func AddProductToFavorite(c *gin.Context) {
 }
 
 func GetFavorites(c *gin.Context) {
+	tokenClaims, exists := c.Get("tokenClaims")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+		return
+	}
+
+	claims, ok := tokenClaims.(*auth.SignedUserDetails)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+		return
+	}
+
+	userIDs := claims.Id
+	var user entities.Users
+	filter := bson.M{"_id": userIDs}
+	err := usersCollection.FindOne(c, filter).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find user"})
+		return
+	}
+	favorites := user.Favorites
+	filters := bson.M{"_id": bson.M{"$in": favorites}}
+	cursor, err := proCollection.Find(c, filters)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query products"})
+		return
+	}
+	defer cursor.Close(c)
+	var products []entities.Products
+	for cursor.Next(c) {
+		var product entities.Products
+		if err := cursor.Decode(&product); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode product"})
+			return
+		}
+		products = append(products, product)
+	}
+
+	if err := cursor.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cursor error"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "favorites", "body": products})
 
 }

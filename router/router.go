@@ -110,4 +110,5 @@ func FavoriteRoute(r *gin.RouterGroup) {
 	b.Use(auth.UserAuthenticate)
 	b.POST("/users/favorites", services.AddProductToFavorite)
 	b.OPTIONS("users/favorites", services.AddProductToFavorite)
+	b.GET("/users/favorites", services.GetFavorites)
 }
