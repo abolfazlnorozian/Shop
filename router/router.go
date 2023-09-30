@@ -111,4 +111,5 @@ func FavoriteRoute(r *gin.RouterGroup) {
 	b.POST("/users/favorites", services.AddProductToFavorite)
 	b.OPTIONS("users/favorites", services.AddProductToFavorite)
 	b.GET("/users/favorites", services.GetFavorites)
+	b.DELETE("/users/favorites/:productID", services.DeleteFavorites)
 }

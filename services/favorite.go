@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"net/http"
 	"shop/auth"
 	"shop/entities"
@@ -220,5 +221,56 @@ func GetFavorites(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "favorites", "body": products})
+
+}
+
+func DeleteFavorites(c *gin.Context) {
+	// Extract the product ID from the URL
+	productIDStr := c.Param("productID")
+
+	// Convert the product ID string to a MongoDB ObjectId
+	productID, err := primitive.ObjectIDFromHex(productIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+	tokenClaims, exists := c.Get("tokenClaims")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+		return
+	}
+
+	claims, ok := tokenClaims.(*auth.SignedUserDetails)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+		return
+	}
+	userIDs := claims.Id
+	// var user entities.Users
+	filter := bson.M{"_id": userIDs}
+	// err := usersCollection.FindOne(c, filter).Decode(&user)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find user"})
+	// 	return
+	// }
+	//favorites := user.Favorites
+	update := bson.M{"$pull": bson.M{"favoritesProducts": productID}}
+
+	// Update the user document
+	result, err := usersCollection.UpdateOne(c, filter, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user document"})
+		return
+	}
+	// Log the values for debugging
+	fmt.Println("User ID:", userIDs)
+	fmt.Println("Product ID to remove:", productID)
+	// Check if the update modified any documents
+	if result.ModifiedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found or product ID not in favorites"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "favorite_product_updated", "body": gin.H{}})
 
 }
