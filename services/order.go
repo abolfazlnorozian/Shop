@@ -52,7 +52,7 @@ func FindordersByadmin(c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": orders})
+	c.JSON(http.StatusCreated, gin.H{"message": orders})
 
 }
 
