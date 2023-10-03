@@ -62,3 +62,59 @@ type Variation struct {
 	Id              primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	Price           int                `json:"price" bson:"price"`
 }
+
+//**************************************************************
+type FavoritesProducts struct {
+	ID              string             `json:"_id" bson:"-"`
+	Amazing         bool               `json:"amazing,omitempty"  bson:"amazing,omitempty"`
+	IsMillModel     bool               `json:"isMillModel,omitempty" bson:"isMillModel,omitempty"`
+	ProductType     string             `json:"productType,omitempty" bson:"productType,omitempty"`
+	Quantity        int                `json:"quantity,omitempty" bson:"quantity,omitempty"`
+	Comment         []string           `json:"comments,omitempty" bson:"comments,omitempty"`
+	Parent          primitive.ObjectID `json:"parent,omitempty" bson:"parent,omitempty"`
+	Category        []interface{}      `json:"categories,omitempty" bson:"categories,omitempty"`
+	Tags            []string           `json:"tags,omitempty" bson:"tags,omitempty"`
+	SimilarProducts []string           `json:"similarProducts,omitempty" bson:"similarProducts,omitempty"`
+	NameFuzzy       []string           `json:"name_fuzzy,omitempty" bson:"name_fuzzy,omitempty"`
+	Images          []ImagePro         `json:"images,omitempty" bson:"images,omitempty"`
+	Name            string             `json:"name,omitempty" bson:"name,omitempty"`
+	Price           int                `json:"price,omitempty" bson:"price,omitempty"`
+	Details         string             `json:"details,omitempty" bson:"details,omitempty"`
+	DiscountPercent int                `json:"discountPercent,omitempty" bson:"discountPercent,omitempty"`
+	Stock           int                `json:"stock,omitempty" bson:"stock,omitempty"`
+	CategoryID      string             `json:"categoryId,omitempty" bson:"categoryId,omitempty"`
+	Attributes      []Attribute        `json:"attributes,omitempty" bson:"attributes,omitempty"`
+	Slug            string             `json:"slug,omitempty" bson:"slug,omitempty"`
+	Dimensions      []Dimension        `json:"dimensions,omitempty" bson:"dimensions,omitempty"`
+	Variations      []Variation        `json:"variations,omitempty" bson:"variations,omitempty"`
+	CreatedAt       time.Time          `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
+	UpdatedAt       time.Time          `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
+	V               int                `json:"__v,omitempty" bson:"__v,omitempty"`
+	ShortID         string             `json:"shortId,omitempty" bson:"shortId,omitempty"`
+	NotExist        bool               `json:"notExist,omitempty" bson:"notExist,omitempty"`
+	BannerUrl       string             `json:"bannerUrl,omitempty" bson:"bannerUrl,omitempty"`
+	SalesNumber     int                `json:"salesNumber,omitempty" bson:"salesNumber,omitempty"`
+}
+
+type FavoriteImagePro struct {
+	ID  primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	Url string             `json:"url,omitempty" bson:"url,omitempty"`
+}
+type FavoritesAttribute struct {
+	ID    primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	Key   string             `json:"key,omitempty" bson:"key,omitempty"`
+	Value string             `json:"value,omitempty" bson:"value,omitempty"`
+}
+type FavoritesDimension struct {
+	Values []int              `json:"values,omitempty" bson:"values"`
+	ID     primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	Key    int                `bson:"key,omitempty"`
+}
+
+type FavoritesVariation struct {
+	Keys            []int              `json:"keys,omitempty" bson:"keys,omitempty"`
+	DiscountPercent int                `json:"discountPercent,omitempty" bson:"discountPercent,omitempty"`
+	Quantity        int                `json:"quantity,omitempty" bson:"quantity,omitempty"`
+	Id              primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	Price           int                `json:"price,omitempty" bson:"price,omitempty"`
+}

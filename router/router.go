@@ -82,6 +82,7 @@ func CartRouter(r *gin.RouterGroup) {
 	ca.Use(auth.UserAuthenticate)
 
 	ca.POST("/carts", services.AddCatrs)
+	ca.OPTIONS("/carts/", services.AddCatrs)
 	ca.GET("/carts", services.GetCarts)
 	ca.OPTIONS("/carts", services.GetCarts)
 
@@ -111,5 +112,7 @@ func FavoriteRoute(r *gin.RouterGroup) {
 	b.POST("/users/favorites", services.AddProductToFavorite)
 	b.OPTIONS("users/favorites", services.AddProductToFavorite)
 	b.GET("/users/favorites", services.GetFavorites)
+	b.OPTIONS("users/favorites/:productID", services.DeleteFavorites)
+
 	b.DELETE("/users/favorites/:productID", services.DeleteFavorites)
 }

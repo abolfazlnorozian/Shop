@@ -59,7 +59,6 @@ func corsMiddleware() gin.HandlerFunc {
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(http.StatusOK)
-			c.AbortWithStatus(http.StatusCreated)
 			return
 		}
 

@@ -98,6 +98,8 @@ func AddCatrs(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "cart_edited", "body": gin.H{}})
+	c.JSON(http.StatusNoContent, gin.H{})
+
 }
 
 func GetCarts(c *gin.Context) {
