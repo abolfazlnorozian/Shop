@@ -11,15 +11,15 @@ import (
 func ProRouter(r *gin.RouterGroup) {
 	pro := r.Group("/")
 
-	userAuth := r.Group("/")
+	//userAuth := r.Group("/")
 	adminAuth := r.Group("/")
 
 	adminAuth.Use(auth.AdminAuthenticate())
 	//userAuth.Use(auth.UserAuthenticate())
 	adminAuth.GET("/allproduct", services.FindAllProducts)
 	adminAuth.POST("/addproduct", services.AddProduct())
-	userAuth.GET("/products/:slug", services.GetProductBySlug)
-	pro.GET("/products", services.GetProductsByOneField)
+	pro.GET("/products/:slug", services.GetProductBySlug)
+	pro.GET("/products", services.GetProductsByFields)
 
 }
 
@@ -81,11 +81,13 @@ func CartRouter(r *gin.RouterGroup) {
 	ca := r.Group("/users")
 	ca.Use(auth.UserAuthenticate)
 
-	ca.POST("/carts", services.AddCatrs)
+	ca.POST("/carts/", services.AddCatrs)
+	ca.OPTIONS("/carts/", services.AddCatrs)
+	ca.OPTIONS("/carts", services.OptionsCarts)
 	ca.GET("/carts", services.GetCarts)
-	ca.OPTIONS("/carts", services.GetCarts)
 
-	ca.DELETE("/deletedCart", services.DeleteCart)
+	ca.DELETE("/carts", services.DeleteCart)
+
 }
 
 func BrandRoute(r *gin.RouterGroup) {
@@ -109,4 +111,9 @@ func FavoriteRoute(r *gin.RouterGroup) {
 	b := r.Group("/")
 	b.Use(auth.UserAuthenticate)
 	b.POST("/users/favorites", services.AddProductToFavorite)
+	b.OPTIONS("users/favorites", services.AddProductToFavorite)
+	b.GET("/users/favorites", services.GetFavorites)
+	b.OPTIONS("users/favorites/:productID", services.DeleteFavorites)
+
+	b.DELETE("/users/favorites/:productID", services.DeleteFavorites)
 }

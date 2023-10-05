@@ -16,8 +16,8 @@ type Catrs struct {
 	V         int                `json:"__v" bson:"__v"`
 }
 type ComeProduct struct {
-	Quantity      int   `json:"quantity" bson:"quantity"`
-	VariationsKey []int `json:"variationsKey" bson:"variationsKey"`
-	//Id            primitive.ObjectID `json:"_id" bson:"_id"`
-	ProductId primitive.ObjectID `json:"productId" bson:"productId"`
+	Quantity      int                `json:"quantity" bson:"quantity"`
+	VariationsKey []int              `json:"variationsKey" bson:"variationsKey"`
+	Id            primitive.ObjectID `json:"_id" bson:"_id"`
+	ProductId     primitive.ObjectID `json:"productId" bson:"productId"`
 }
