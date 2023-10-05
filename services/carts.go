@@ -18,7 +18,6 @@ var cartCollection *mongo.Collection = database.GetCollection(database.DB, "cart
 var prodCollection *mongo.Collection = database.GetCollection(database.DB, "products")
 
 //var caCollection *mongo.Collection = database.GetCollection(database.DB, "brandschemas")
-
 func AddCatrs(c *gin.Context) {
 	var cart entities.Catrs
 
@@ -37,7 +36,12 @@ func AddCatrs(c *gin.Context) {
 
 	username := claims.Username
 
-	if err := c.ShouldBindJSON(&cart); err != nil {
+	var input struct {
+		ProductId     primitive.ObjectID `json:"productId"`
+		VariationsKey []int              `json:"variationsKey"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON data"})
 		return
 	}
@@ -48,6 +52,16 @@ func AddCatrs(c *gin.Context) {
 
 	cart.CreatedAt = time.Now()
 	cart.UpdatedAt = time.Now()
+
+	// Create a ComeProduct based on the input JSON
+	product := entities.ComeProduct{
+		Quantity:      1,
+		VariationsKey: input.VariationsKey,
+		ProductId:     input.ProductId,
+		Id:            primitive.NewObjectID(),
+	}
+
+	cart.Products = []entities.ComeProduct{product}
 
 	// Check if a document with the same username exists
 	filter := bson.M{"username": username}
@@ -87,8 +101,7 @@ func AddCatrs(c *gin.Context) {
 		return
 	}
 
-	// If no existing document found, create a new one with the first product and quantity 1
-	cart.Products[0].Quantity = 1
+	// If no existing document is found, create a new one with the first product and quantity 1
 
 	// Insert the new document into the database
 	_, err = cartCollection.InsertOne(c, cart)
@@ -99,11 +112,10 @@ func AddCatrs(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "cart_edited", "body": gin.H{}})
 	c.JSON(http.StatusNoContent, gin.H{})
-
 }
 
 func GetCarts(c *gin.Context) {
-	var pro []entities.Products
+	var products []map[string]interface{} // Combined product structure
 
 	tokenClaims, exists := c.Get("tokenClaims")
 	if !exists {
@@ -121,15 +133,93 @@ func GetCarts(c *gin.Context) {
 
 	cur, err := cartCollection.Find(c, bson.M{"username": username})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch carts"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch carts", "details": err.Error()})
 		return
 	}
 	defer cur.Close(c)
 
-	// Check if the user has an empty cart
-	if !cur.Next(c) {
-		// User has an empty cart, return the specific response
-		c.JSON(http.StatusCreated, gin.H{
+	var cartNotFound bool = true
+
+	for cur.Next(c) {
+		var cart entities.Catrs
+		if err := cur.Decode(&cart); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode cart", "details": err.Error()})
+			return
+		}
+		if len(cart.Products) == 0 {
+			// Cart is empty, return empty cart response
+			c.JSON(http.StatusCreated, gin.H{
+				"success": true,
+				"message": "cart",
+				"body": []map[string]interface{}{
+					{
+						"variations":  []interface{}{},
+						"mixproducts": []interface{}{},
+					},
+				},
+			})
+			return
+		}
+
+		cartNotFound = false
+
+		for _, product := range cart.Products {
+
+			// Fetch detailed product information from your data source (e.g., database)
+			var retrievedProduct entities.Products
+			err := prodCollection.FindOne(c, bson.M{"_id": product.ProductId}).Decode(&retrievedProduct)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch product", "details": err.Error()})
+				return
+			}
+
+			// Create a detailed product structure
+			detailedProduct := map[string]interface{}{
+				"_id":             retrievedProduct.ID.Hex(),
+				"name":            retrievedProduct.Name,
+				"price":           retrievedProduct.Price,
+				"notExist":        retrievedProduct.NotExist,
+				"amazing":         retrievedProduct.Amazing,
+				"productType":     retrievedProduct.ProductType,
+				"quantity":        retrievedProduct.Quantity,
+				"comments":        retrievedProduct.Comment,
+				"parent":          retrievedProduct.Parent,
+				"categories":      retrievedProduct.Category,
+				"tags":            retrievedProduct.Tags,
+				"similarProducts": retrievedProduct.SimilarProducts,
+				"name_fuzzy":      retrievedProduct.NameFuzzy,
+				"images":          retrievedProduct.Images,
+				"details":         retrievedProduct.Details,
+				"discountPercent": retrievedProduct.DiscountPercent,
+				"stock":           retrievedProduct.Stock,
+				"categoryId":      retrievedProduct.CategoryID,
+				"attributes":      retrievedProduct.Attributes,
+				"slug":            retrievedProduct.Slug,
+				"shortId":         retrievedProduct.ShortID,
+				"dimensions":      retrievedProduct.Dimensions,
+				"variations":      retrievedProduct.Variations,
+				"createdAt":       retrievedProduct.CreatedAt,
+				"updatedAt":       retrievedProduct.UpdatedAt,
+				"salesNumber":     retrievedProduct.SalesNumber,
+				"bannerUrl":       retrievedProduct.BannerUrl,
+				// Add more fields as needed
+			}
+
+			// Append both simplified and detailed products to the products slice
+			products = append(products, map[string]interface{}{
+				"_id":           product.Id.Hex(),
+				"quantity":      product.Quantity,
+				"variationsKey": product.VariationsKey,
+				"product":       detailedProduct,
+				"variations":    []interface{}{},
+				"mixproducts":   []interface{}{},
+			})
+		}
+	}
+
+	if cartNotFound {
+		// User has an empty cart
+		emptyCartResponse := gin.H{
 			"success": true,
 			"message": "cart",
 			"body": []map[string]interface{}{
@@ -138,98 +228,31 @@ func GetCarts(c *gin.Context) {
 					"mixproducts": []interface{}{},
 				},
 			},
-		})
+		}
+		c.JSON(http.StatusCreated, emptyCartResponse)
 		return
 	}
 
-	for cur.Next(c) {
-		var cart entities.Catrs
-		err := cur.Decode(&cart)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode cart"})
-			return
-		}
-
-		for _, product := range cart.Products {
-			productID := product.ProductId
-
-			// Retrieve product data from "products" collection based on productID
-			var retrievedProduct entities.Products
-			err := prodCollection.FindOne(c, bson.M{"_id": productID}).Decode(&retrievedProduct)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch product"})
-				return
-			}
-
-			pro = append(pro, retrievedProduct)
-		}
-	}
-
-	if len(pro) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "cart", "body": pro})
+	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "cart", "body": products})
+	// c.JSON(http.StatusNoContent, gin.H{})
 }
 
-// func GetCarts(c *gin.Context) {
-// 	var pro []entities.Products
-
-// 	tokenClaims, exists := c.Get("tokenClaims")
-// 	if !exists {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
-// 		return
-// 	}
-
-// 	claims, ok := tokenClaims.(*auth.SignedUserDetails)
-// 	if !ok {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
-// 		return
-// 	}
-
-// 	username := claims.Username
-
-// 	cur, err := cartCollection.Find(c, bson.M{"username": username})
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch carts"})
-// 		return
-// 	}
-// 	defer cur.Close(c)
-
-// 	for cur.Next(c) {
-// 		var cart entities.Catrs
-// 		err := cur.Decode(&cart)
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode cart"})
-// 			return
-// 		}
-
-// 		for _, product := range cart.Products {
-// 			productID := product.ProductId
-
-// 			// Retrieve product data from "products" collection based on productID
-// 			var retrievedProduct entities.Products
-// 			err := prodCollection.FindOne(c, bson.M{"_id": productID}).Decode(&retrievedProduct)
-// 			if err != nil {
-// 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch product"})
-// 				return
-// 			}
-
-// 			pro = append(pro, retrievedProduct)
-// 		}
-// 	}
-
-// 	if len(pro) == 0 {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusCreated, gin.H{"products": pro})
-// }
-
 func DeleteCart(c *gin.Context) {
-	var cart entities.Catrs
+	// Parse the 'id' parameter from the URL
+	id := c.Query("id")
+
+	// Check if the 'id' parameter is valid
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid 'id' parameter"})
+		return
+	}
+
+	// Convert the 'id' parameter to a primitive.ObjectID
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid 'id' parameter"})
+		return
+	}
 
 	tokenClaims, exists := c.Get("tokenClaims")
 
@@ -245,57 +268,46 @@ func DeleteCart(c *gin.Context) {
 	}
 
 	username := claims.Username
-	if err := c.ShouldBindJSON(&cart); err != nil {
-		c.JSON(http.StatusOK, gin.H{"message": err.Error()})
-		return
-	}
 
 	filter := bson.M{"username": username}
 	var existingDoc entities.Catrs
-	err := cartCollection.FindOne(c, filter).Decode(&existingDoc)
+	err = cartCollection.FindOne(c, filter).Decode(&existingDoc)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
 
-	existingProductIndex := -1
+	// Find the index of the ComeProduct to delete
+	var productIndexToDelete = -1
 	for i, product := range existingDoc.Products {
-		if product.ProductId == cart.Products[0].ProductId {
-			existingProductIndex = i
+		if product.Id == objectID {
+			productIndexToDelete = i
 			break
 		}
 	}
 
-	if existingProductIndex != -1 {
-		// If productId already exists, decrement the quantity by 1
-		existingDoc.Products[existingProductIndex].Quantity--
-		if existingDoc.Products[existingProductIndex].Quantity == 0 {
-			// If quantity reaches zero, remove the product from the Products array
-			existingDoc.Products = append(existingDoc.Products[:existingProductIndex], existingDoc.Products[existingProductIndex+1:]...)
-		}
-	}
+	if productIndexToDelete != -1 {
+		// Remove the ComeProduct from the Products array
+		existingDoc.Products = append(existingDoc.Products[:productIndexToDelete], existingDoc.Products[productIndexToDelete+1:]...)
 
-	// Update the existing document in the database
-	update := bson.M{"$set": bson.M{
-		"products":  existingDoc.Products,
-		"updatedAt": time.Now(),
-	}}
-	_, err = cartCollection.UpdateOne(c, filter, update)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-		return
-	}
-
-	// If no products remaining, delete the document from the database
-	if len(existingDoc.Products) == 0 {
-		_, err = cartCollection.DeleteOne(c, filter)
+		// Update the existing document in the database
+		update := bson.M{"$set": bson.M{
+			"products":  existingDoc.Products,
+			"updatedAt": time.Now(),
+		}}
+		_, err = cartCollection.UpdateOne(c, filter, update)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"message": "Document deleted"})
+
+		c.JSON(http.StatusCreated, gin.H{"message": "cart_edited", "success": true, "body": gin.H{}})
+		c.JSON(http.StatusNoContent, gin.H{})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": existingDoc})
+}
+
+func OptionsCarts(c *gin.Context) {
+	c.Status(http.StatusNoContent)
 }

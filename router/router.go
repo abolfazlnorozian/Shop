@@ -81,12 +81,13 @@ func CartRouter(r *gin.RouterGroup) {
 	ca := r.Group("/users")
 	ca.Use(auth.UserAuthenticate)
 
-	ca.POST("/carts", services.AddCatrs)
+	ca.POST("/carts/", services.AddCatrs)
 	ca.OPTIONS("/carts/", services.AddCatrs)
+	ca.OPTIONS("/carts", services.OptionsCarts)
 	ca.GET("/carts", services.GetCarts)
-	ca.OPTIONS("/carts", services.GetCarts)
 
-	ca.DELETE("/deletedCart", services.DeleteCart)
+	ca.DELETE("/carts", services.DeleteCart)
+
 }
 
 func BrandRoute(r *gin.RouterGroup) {
