@@ -137,12 +137,7 @@ func DeleteFavorites(c *gin.Context) {
 	userIDs := claims.Id
 	// var user entities.Users
 	filter := bson.M{"_id": userIDs}
-	// err := usersCollection.FindOne(c, filter).Decode(&user)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find user"})
-	// 	return
-	// }
-	//favorites := user.Favorites
+
 	update := bson.M{"$pull": bson.M{"favoritesProducts": productID}}
 
 	// Update the user document
