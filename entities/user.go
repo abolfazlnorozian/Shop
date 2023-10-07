@@ -28,9 +28,9 @@ type Users struct {
 }
 
 type Addr struct {
-	Id         *primitive.ObjectID `json:"_id" bson:"_id"`
-	City       string              `json:"city" bson:"city"`
-	State      string              `json:"state" bson:"state"`
-	Address    string              `json:"address" bson:"address"`
-	PostalCode int                 `json:"postalcode" bson:"postalcode"`
+	Id         primitive.ObjectID `json:"_id" bson:"_id"`
+	City       string             `json:"city" bson:"city"`
+	State      string             `json:"state" bson:"state"`
+	Address    string             `json:"address" bson:"address"`
+	PostalCode int                `json:"postalcode" bson:"postalcode"`
 }
