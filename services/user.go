@@ -201,7 +201,6 @@ func GetAllUsers(c *gin.Context) {
 
 func UpdatedUser(c *gin.Context) {
 	var user entities.Users
-	var founduser entities.Users
 
 	tokenClaims, exists := c.Get("tokenClaims")
 
@@ -216,65 +215,37 @@ func UpdatedUser(c *gin.Context) {
 		return
 	}
 
-	phone := claims.PhoneNumber
-	role := claims.Role
+	username := claims.Username
 
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 
-	err := usersCollection.FindOne(c, bson.M{"phoneNumber": user.PhoneNumber}).Decode(&founduser)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			c.JSON(http.StatusNotFound, gin.H{"message": "User not Found"})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-		}
-		return
-	}
-
-	// Check if the user is authorized to update the user record
-	if role != "admin" && founduser.PhoneNumber != phone {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to update this user"})
-		return
-	}
-
-	// If the user is not an admin and the request body contains the "phoneNumber" field,
-	// make sure it matches the user's own phoneNumber
-	if role != "admin" && user.PhoneNumber != founduser.PhoneNumber {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "You can only update your own user record"})
-		return
-	}
-
 	// Construct the update document
-	update := bson.D{
-		bson.E{Key: "$set", Value: bson.D{
-			bson.E{Key: "activeSession", Value: user.ActiveSession},
-			bson.E{Key: "fcmRegistrationToken", Value: user.FcmRegistratinToken},
-			bson.E{Key: "favoritesProducts", Value: user.Favorites},
-			bson.E{Key: "username", Value: user.Username},
-			bson.E{Key: "sex", Value: user.Sex},
-			bson.E{Key: "address", Value: user.Address},
-			bson.E{Key: "__v", Value: user.V},
-			bson.E{Key: "countGetSmsInDay", Value: user.CountGetSmsInDay},
-			bson.E{Key: "lastname", Value: user.LastName},
-			bson.E{Key: "name", Value: user.Name},
-			bson.E{Key: "updatedAt", Value: time.Now()},
-			bson.E{Key: "LastSendSmsVerificationTime", Value: time.Now()},
-		}},
-	}
+	update := bson.M{}
 
-	// If the user is an admin, update the user based on the given phoneNumber,
-	// otherwise, update their own user record
-	var updateResult *mongo.UpdateResult
-	if role == "admin" {
-		filter := bson.D{{Key: "phoneNumber", Value: user.PhoneNumber}}
-		updateResult, err = usersCollection.UpdateOne(c, filter, update)
-	} else {
-		filter := bson.D{{Key: "phoneNumber", Value: phone}}
-		updateResult, err = usersCollection.UpdateOne(c, filter, update)
+	// Add individual field updates if they are present in the request
+	if user.Name != "" {
+		update["name"] = user.Name
 	}
+	if user.LastName != "" {
+		update["lastname"] = user.LastName
+	}
+	if user.Sex != 0 {
+		update["sex"] = user.Sex
+	}
+	if user.Email != "" {
+		update["email"] = user.Email
+	}
+	if user.BirthDate != "" {
+		update["birthDate"] = user.BirthDate
+	}
+	// Add updates for other fields as needed...
+
+	// Update the user document based on the username from the token
+	filter := bson.M{"username": username}
+	updateResult, err := usersCollection.UpdateOne(c, filter, bson.M{"$set": update})
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -284,9 +255,72 @@ func UpdatedUser(c *gin.Context) {
 	if updateResult.ModifiedCount == 0 {
 		c.JSON(http.StatusOK, gin.H{"message": "No changes were made"})
 	} else {
-		c.JSON(http.StatusOK, gin.H{"message": "Updated"})
+		c.JSON(http.StatusOK, gin.H{"success": true, "message": "ok_edited"})
 	}
 }
+
+// func UpdatedUser(c *gin.Context) {
+// 	var user entities.Users
+
+// 	tokenClaims, exists := c.Get("tokenClaims")
+
+// 	if !exists {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+// 		return
+// 	}
+
+// 	claims, ok := tokenClaims.(*auth.SignedUserDetails)
+// 	if !ok {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+// 		return
+// 	}
+
+// 	username := claims.Username
+// 	//role := claims.Role
+
+// 	if err := c.ShouldBindJSON(&user); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+// 		return
+// 	}
+
+// 	// Construct the update document
+// 	update := bson.D{
+// 		bson.E{Key: "$set", Value: bson.D{}}, // Initialize an empty $set operator
+// 	}
+
+// 	// Add individual field updates if they are present in the request
+// 	if user.Name != "" {
+// 		update[0].Value = append(update[0].Value.(bson.D), bson.E{Key: "activeSession", Value: user.ActiveSession})
+// 	}
+// 	if user.LastName != "" {
+// 		update[0].Value = append(update[0].Value.(bson.D), bson.E{Key: "fcmRegistrationToken", Value: user.FcmRegistratinToken})
+// 	}
+// 	if user.Sex != 0 {
+// 		update[0].Value = append(update[0].Value.(bson.D), bson.E{Key: "sex", Value: user.Sex})
+// 	}
+// 	if user.Email != "" {
+// 		update[0].Value = append(update[0].Value.(bson.D), bson.E{Key: "email", Value: user.Email})
+// 	}
+// 	if user.BirthDate != "" {
+// 		update[0].Value = append(update[0].Value.(bson.D), bson.E{Key: "birthDate", Value: user.BirthDate})
+// 	}
+// 	// Add updates for other fields as needed...
+
+// 	// Update the user document based on the username from the token
+// 	filter := bson.D{{Key: "username", Value: username}}
+// 	updateResult, err := usersCollection.UpdateOne(c, filter, update)
+
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	if updateResult.ModifiedCount == 0 {
+// 		c.JSON(http.StatusOK, gin.H{"message": "No changes were made"})
+// 	} else {
+// 		c.JSON(http.StatusOK, gin.H{"success": true, "message": "ok_edited"})
+// 	}
+// }
 
 func GetUserByToken(c *gin.Context) {
 	var user entities.Users
@@ -358,34 +392,3 @@ func GetUserByToken(c *gin.Context) {
 
 	c.JSON(http.StatusOK, jsonResponse)
 }
-
-// // Debug: Print the value of user.PhoneNumber before trimming
-// fmt.Printf("PhoneNumber before trimming: %s\n", user.PhoneNumber)
-// // Trim leading and trailing whitespace from phoneNumber
-// phoneNumber := strings.TrimSpace(user.PhoneNumber)
-
-// fmt.Printf("PhoneNumber after trimming: %s\n", phoneNumber)
-
-// // if phoneNumber[0] != '0' {
-// // 	c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is incorrect"})
-// // 	return
-// // }
-
-// if len(phoneNumber) == 0 {
-// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is empty"})
-// 	return
-// }
-
-// if phoneNumber[0] != '0' {
-// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "PhoneNumber is incorrect"})
-// 	log.Println(phoneNumber)
-// 	return
-// }
-
-// // Construct the query to match both versions of phone numbers
-// query := bson.M{
-// 	"$or": []bson.M{
-// 		{"phoneNumber": phoneNumber},     // Entered phone number with leading zero
-// 		{"phoneNumber": phoneNumber[1:]}, // Entered phone number without leading zero
-// 	},
-// }

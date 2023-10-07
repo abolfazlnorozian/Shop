@@ -25,6 +25,7 @@ type Users struct {
 	Email               string                `json:"email,omitempty" bson:"email,omitempty"`
 	LastName            string                `json:"lastname" bson:"lastname"`
 	Name                string                `json:"name" bson:"name"`
+	BirthDate           string                `json:"birthDate" bson:"birthDate"`
 }
 
 type Addr struct {

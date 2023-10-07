@@ -63,13 +63,15 @@ func UserRoute(r *gin.RouterGroup) {
 	us.POST("/auth/login", services.LoginUsers)
 	us.OPTIONS("/auth/login", services.LoginUsers)
 	authAdmin.GET("/users2", services.GetAllUsers)
-	authUser.PUT("/updated", services.UpdatedUser)
+	authUser.PUT("/users/", services.UpdatedUser)
+	authUser.OPTIONS("/users/", services.UpdatedUser)
 	authUser.GET("/users", services.GetUserByToken)
 	authUser.OPTIONS("/users", services.GetUserByToken)
 	authUser.POST("/users/addresses", services.PostAddresses)
 	authUser.GET("/users/addresses", services.GetAddresses)
 	authUser.OPTIONS("/users/addresses", services.GetAddresses)
 	authUser.DELETE("/users/addresses/:id", services.DeleteAddressByID)
+	//authUser.OPTIONS("/users", services.OptionsCarts)
 
 }
 func OrderRouter(r *gin.RouterGroup) {
@@ -87,8 +89,9 @@ func CartRouter(r *gin.RouterGroup) {
 
 	ca.POST("/carts/", services.AddCatrs)
 	ca.OPTIONS("/carts/", services.AddCatrs)
-	ca.OPTIONS("/carts", services.OptionsCarts)
+	//ca.OPTIONS("/carts", services.OptionsCarts)
 	ca.GET("/carts", services.GetCarts)
+	ca.OPTIONS("/carts", services.GetCarts)
 
 	ca.DELETE("/carts", services.DeleteCart)
 
