@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"shop/database"
+	"strings"
 
 	"shop/router"
 
@@ -14,8 +15,12 @@ import (
 
 func main() {
 	r := gin.Default()
+	// r.Use(handleDoubleSlash())
+
 	v1 := r.Group("api")
 	v2 := r.Group("/")
+	v2.Use(removeDoubleSlashesMiddleware)
+
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalln("error loading .env file")
@@ -27,8 +32,6 @@ func main() {
 
 	v1.Use(corsMiddleware())
 	v2.Use(corsMiddleware())
-	// // Enable CORS for your API group
-	// v1.Use(cors.Default())
 
 	router.ProRouter(v1)
 	router.CategoryRouter(v1)
@@ -42,6 +45,7 @@ func main() {
 	router.PageRoute(v1)
 	router.CommentRoute(v1)
 	router.FavoriteRoute(v1)
+	router.State(v2)
 
 	go func() {
 		database.MD()
@@ -49,6 +53,7 @@ func main() {
 	}()
 
 	r.Run(":" + port)
+
 }
 
 func corsMiddleware() gin.HandlerFunc {
@@ -64,4 +69,31 @@ func corsMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func removeDoubleSlashesMiddleware(c *gin.Context) {
+	// Clean up the URL path and remove double slashes
+	requestPath := c.Request.URL.Path
+	cleanedPath := cleanPath(requestPath)
+
+	// Redirect to the cleaned path if it's different from the original
+	if cleanedPath != requestPath {
+		c.Redirect(http.StatusMovedPermanently, cleanedPath)
+		return
+	}
+
+	c.Next()
+}
+
+func cleanPath(path string) string {
+	parts := strings.Split(path, "/")
+	cleanedParts := []string{}
+
+	for _, part := range parts {
+		if part != "" {
+			cleanedParts = append(cleanedParts, part)
+		}
+	}
+
+	return "/" + strings.Join(cleanedParts, "/")
 }

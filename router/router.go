@@ -16,10 +16,10 @@ func ProRouter(r *gin.RouterGroup) {
 
 	adminAuth.Use(auth.AdminAuthenticate())
 	//userAuth.Use(auth.UserAuthenticate())
-	adminAuth.GET("/allproduct", services.FindAllProducts)
+
 	adminAuth.POST("/addproduct", services.AddProduct())
 	pro.GET("/products/:slug", services.GetProductBySlug)
-	pro.GET("/products", services.GetProductsByFields)
+	pro.GET("/products", services.GetProductsByField)
 
 }
 
@@ -89,11 +89,19 @@ func CartRouter(r *gin.RouterGroup) {
 
 	ca.POST("/carts/", services.AddCatrs)
 	ca.OPTIONS("/carts/", services.AddCatrs)
-	//ca.OPTIONS("/carts", services.OptionsCarts)
+	ca.OPTIONS("/carts", services.OptionsCarts)
 	ca.GET("/carts", services.GetCarts)
-	ca.OPTIONS("/carts", services.GetCarts)
+	//ca.OPTIONS("/carts", services.GetCarts)
 
 	ca.DELETE("/carts", services.DeleteCart)
+	//ca.OPTIONS("/carts/", services.DeleteCart)
+
+}
+
+func State(r *gin.RouterGroup) {
+	s := r.Group("/json")
+
+	s.GET("/state.json", services.State)
 
 }
 

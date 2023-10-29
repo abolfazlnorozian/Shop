@@ -33,5 +33,5 @@ type Addr struct {
 	City       string             `json:"city" bson:"city"`
 	State      string             `json:"state" bson:"state"`
 	Address    string             `json:"address" bson:"address"`
-	PostalCode int                `json:"postalcode" bson:"postalcode"`
+	PostalCode string             `json:"postalcode" bson:"postalcode"`
 }

@@ -92,6 +92,7 @@ func GetAddresses(c *gin.Context) {
 
 	// Display all address information
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "addresses", "body": user.Address})
+	//c.JSON(http.StatusNoContent, gin.H{})
 }
 
 func DeleteAddressByID(c *gin.Context) {

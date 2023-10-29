@@ -7,7 +7,6 @@ import (
 	"shop/auth"
 	"shop/database"
 	"shop/entities"
-	"shop/response"
 	"strconv"
 	"time"
 
@@ -25,37 +24,40 @@ type ProductWithCategories struct {
 	Categories []entities.Category `json:"categories"`
 }
 
-func FindAllProducts(c *gin.Context) {
-	if err := auth.CheckUserType(c, "admin"); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+// func FindAllProducts(c *gin.Context) {
+// 	if err := auth.CheckUserType(c, "admin"); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
 
-	}
+// 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	var products []entities.Products
-	defer cancel()
+// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+// 	var products []entities.Products
+// 	defer cancel()
 
-	results, err := proCollection.Find(ctx, bson.M{})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"massage": "Not Find Collection"})
-		return
-	}
-	//results.Close(ctx)
-	for results.Next(ctx) {
-		var pro entities.Products
-		err := results.Decode(&pro)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-			return
+// 	results, err := proCollection.Find(ctx, bson.M{})
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"massage": "Not Find Collection"})
+// 		return
+// 	}
+// 	//results.Close(ctx)
+// 	for results.Next(ctx) {
+// 		var pro entities.Products
+// 		err := results.Decode(&pro)
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+// 			return
 
-		}
-		products = append(products, pro)
+// 		}
+// 		products = append(products, pro)
 
-	}
+// 	}
 
-	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": &products}})
-}
+// 	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": &products}})
+// }
+
+//*********************************************************************
+
 func AddProduct() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if err := auth.CheckUserType(c, "admin"); err != nil {
@@ -131,32 +133,48 @@ func fetchCategoryDetails(ctx context.Context, categoryIDs []primitive.ObjectID)
 	return categories, nil
 }
 
-func GetProductsByFields(c *gin.Context) {
-	// // Construct a filter based on query parameters
+//*******************************************************************************
+func GetProductsByField(c *gin.Context) {
+	// Set a default filter to fetch all products
 	filter := bson.M{}
 
-	for key, value := range c.Request.URL.Query() {
-		if len(value) > 0 {
-			// Convert the parameter name to match the field name in the database
-			fieldName := key
-			if key == "categoryid" {
-				fieldName = "categoryId"
-			}
-			// Handle the "amazing" parameter separately
-			if key == "amazing" {
-				// Check if the value is "true" or "false"
-				if value[0] == "true" || value[0] == "false" {
-					// Convert the string value to a boolean
-					filter[fieldName] = (value[0] == "true")
-				} else {
-					// Handle the case where the value is neither "true" nor "false"
-					c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid value for 'amazing' parameter"})
-					return
-				}
-			} else {
-				filter[fieldName] = value[0]
-			}
-		}
+	// Check if the 'onlyexists' parameter is set to "true"
+	onlyExistsParam := c.DefaultQuery("onlyexists", "false")
+
+	// Check if the 'new' parameter is set to "1"
+	isNewParam := c.DefaultQuery("new", "0")
+
+	// Check if the 'amazing' parameter is set to "true"
+	amazingParam := c.DefaultQuery("amazing", "false")
+
+	// Check if the 'categoryid' parameter is provided
+	categoryIDParam := c.DefaultQuery("categoryid", "")
+
+	// Create a separate filter for counting all documents
+	var countFilter bson.M
+
+	// Determine the filter based on parameters
+	if onlyExistsParam == "true" || (onlyExistsParam == "true" && isNewParam == "1") {
+		// If 'onlyexists' is "true" or 'onlyexists' is "true" and 'new' is "1," allow fetching all products
+		filter = bson.M{}
+		// Use a separate filter to count all documents
+		countFilter = bson.M{}
+	} else {
+		// If not all documents are requested, apply additional filter conditions
+		countFilter = filter
+	}
+
+	if amazingParam == "true" {
+		// If 'amazing' is "true," set the filter to fetch amazing products
+		filter["amazing"] = true
+	} else if amazingParam == "false" {
+		// If 'amazing' is "false," set the filter to fetch non-amazing products
+		filter["amazing"] = false
+	}
+
+	if categoryIDParam != "" {
+		// If 'categoryid' is provided, add it to the filter
+		filter["categoryId"] = categoryIDParam
 	}
 
 	// Pagination parameters from the query
@@ -171,7 +189,14 @@ func GetProductsByFields(c *gin.Context) {
 
 	var products []entities.Products
 
-	// Perform the database query with pagination and the constructed filter
+	// Calculate total number of documents in the collection
+	totalDocs, err := proCollection.CountDocuments(ctx, countFilter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to count products"})
+		return
+	}
+
+	// Fetch products based on the constructed filter
 	results, err := proCollection.Find(ctx, filter, options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to query products"})
@@ -187,13 +212,6 @@ func GetProductsByFields(c *gin.Context) {
 			return
 		}
 		products = append(products, pro)
-	}
-
-	// Calculate total number of documents in the collection (without pagination)
-	totalDocs, err := proCollection.CountDocuments(ctx, filter)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to count products"})
-		return
 	}
 
 	// Calculate total number of pages based on the limit
@@ -251,114 +269,3 @@ func GetProductsByFields(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response)
 }
-
-// func GetProductsByOneField(c *gin.Context) {
-// 	var filter bson.M
-
-// 	// Check if the "amazing" parameter is provided
-// 	if amazingStr := c.Query("amazing"); amazingStr != "" {
-// 		amazing, err := strconv.ParseBool(amazingStr)
-// 		if err != nil {
-// 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid 'amazing' parameter"})
-// 			return
-// 		}
-// 		filter = bson.M{"amazing": amazing}
-// 	}
-
-// 	// Check if the "categoryId" parameter is provided
-// 	if categoryStr := c.Query("categoryId"); categoryStr != "" {
-// 		filter = bson.M{"categoryId": categoryStr}
-// 	}
-
-// 	// Pagination parameters from the query
-// 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-// 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "40"))
-
-// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 	defer cancel()
-
-// 	// Calculate skip value for pagination
-// 	skip := (page - 1) * limit
-
-// 	var products []entities.Products
-
-// 	// Perform the database query with pagination and the constructed filter
-// 	results, err := proCollection.Find(ctx, filter, options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)))
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to query products"})
-// 		return
-// 	}
-// 	defer results.Close(ctx)
-
-// 	for results.Next(ctx) {
-// 		var pro entities.Products
-// 		err := results.Decode(&pro)
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-// 			return
-// 		}
-// 		products = append(products, pro)
-// 	}
-
-// 	// Calculate total number of documents in the collection (without pagination)
-// 	totalDocs, err := proCollection.CountDocuments(ctx, filter)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to count products"})
-// 		return
-// 	}
-
-// 	// Calculate total number of pages based on the limit
-// 	totalPages := int(math.Ceil(float64(totalDocs) / float64(limit)))
-
-// 	// Determine if there are previous and next pages
-// 	hasPrevPage := page > 1
-// 	hasNextPage := page < totalPages
-
-// 	// Prepare the custom response with selected fields
-// 	var customProducts []gin.H
-// 	for _, product := range products {
-// 		customProduct := gin.H{
-// 			"_id":             product.ID,
-// 			"notExist":        product.NotExist,
-// 			"amazing":         product.Amazing,
-// 			"productType":     product.ProductType,
-// 			"images":          product.Images,
-// 			"name":            product.Name,
-// 			"price":           product.Price,
-// 			"discountPercent": product.DiscountPercent,
-// 			"stock":           product.Stock,
-// 			"slug":            product.Slug,
-// 			"variations":      product.Variations,
-// 			"salesNumber":     product.SalesNumber,
-// 			"bannerUrl":       product.BannerUrl,
-// 		}
-// 		customProducts = append(customProducts, customProduct)
-// 	}
-
-// 	// Prepare the response with custom products and pagination information
-// 	response := gin.H{
-// 		"docs":          customProducts,
-// 		"totalDocs":     totalDocs,
-// 		"limit":         limit,
-// 		"totalPages":    totalPages,
-// 		"page":          page,
-// 		"pagingCounter": skip + 1,
-// 		"hasPrevPage":   hasPrevPage,
-// 		"hasNextPage":   hasNextPage,
-// 	}
-
-// 	// Set prevPage and nextPage values based on the current page
-// 	if hasPrevPage {
-// 		response["prevPage"] = page - 1
-// 	} else {
-// 		response["prevPage"] = nil
-// 	}
-
-// 	if hasNextPage {
-// 		response["nextPage"] = page + 1
-// 	} else {
-// 		response["nextPage"] = nil
-// 	}
-
-// 	c.JSON(http.StatusOK, response)
-// }

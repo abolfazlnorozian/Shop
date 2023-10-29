@@ -391,4 +391,5 @@ func GetUserByToken(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, jsonResponse)
+	c.JSON(http.StatusNoContent, gin.H{})
 }
