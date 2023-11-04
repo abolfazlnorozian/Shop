@@ -45,6 +45,7 @@ func main() {
 	router.PageRoute(v1)
 	router.CommentRoute(v1)
 	router.FavoriteRoute(v1)
+
 	router.State(v2)
 
 	go func() {

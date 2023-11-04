@@ -12,6 +12,7 @@ type Comments struct {
 	IsActive  bool               `json:"isActive" bson:"isActive"`
 	Title     string             `json:"title" bson:"title"`
 	Text      string             `json:"text" bson:"text"`
+	Rate      int                `json:"rate" bson:"rate"`
 	ProductId primitive.ObjectID `json:"productId" bson:"productId"`
 	UserId    primitive.ObjectID `json:"userId" bson:"userId"`
 	CreatedAt time.Time          `json:"createdAt" bson:"createdAt"`

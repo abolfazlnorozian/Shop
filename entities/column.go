@@ -40,3 +40,13 @@ type ImageCont struct {
 	URL string `json:"url" bson:"url"`
 	Id  string `json:"_id" bson:"_id"`
 }
+
+// Define a custom type to handle the desired format for "content"
+type CustomContent struct {
+	Alt   string `json:"alt"`
+	Link  string `json:"link"`
+	Image struct {
+		URL string `json:"url"`
+		Id  string `json:"_id"`
+	} `json:"image"`
+}

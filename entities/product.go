@@ -118,3 +118,57 @@ type FavoritesVariation struct {
 	Id              primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	Price           int                `json:"price,omitempty" bson:"price,omitempty"`
 }
+
+// func GetProductBySlug(c *gin.Context) {
+// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+// 	defer cancel()
+
+// 	slug := c.Param("slug")
+// 	var proWithCategories ProductWithCategories
+
+// 	err := proCollection.FindOne(ctx, bson.M{"slug": slug}).Decode(&proWithCategories.Products)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	// Fetch category details and store them in the Categories field
+// 	categories, err := fetchCategoryDetails(ctx, proWithCategories.Category)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	// Create a map or struct literal with the selected fields from the Products struct
+// 	response := map[string]interface{}{
+// 		"amazing":         proWithCategories.Amazing,
+// 		"productType":     proWithCategories.ProductType,
+// 		"quantity":        proWithCategories.Quantity,
+// 		"comments":        proWithCategories.Comment,
+// 		"parent":          proWithCategories.Parent,
+// 		"categories":      proWithCategories.Category,
+// 		"name":            proWithCategories.Name,
+// 		"price":           proWithCategories.Price,
+// 		"details":         proWithCategories.Details,
+// 		"discountPercent": proWithCategories.DiscountPercent,
+// 		"stock":           proWithCategories.Stock,
+// 		"categoryId":      proWithCategories.CategoryID,
+// 		"attributes":      proWithCategories.Attributes,
+// 		"slug":            proWithCategories.Slug,
+// 		"dimensions":      proWithCategories.Dimensions,
+// 		"variations":      proWithCategories.Variations,
+// 		"createdAt":       proWithCategories.CreatedAt,
+// 		"updatedAt":       proWithCategories.UpdatedAt,
+// 		"__v":             proWithCategories.V,
+// 		"shortId":         proWithCategories.ShortID,
+// 		"notExist":        proWithCategories.NotExist,
+// 		"bannerUrl":       proWithCategories.BannerUrl,
+// 		"salesNumber":     proWithCategories.SalesNumber,
+// 		// Add other fields you need here
+// 	}
+
+// 	// Assign the fetched categories to the response
+// 	response["categories"] = categories
+
+// 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "product", "body": response})
+// }
