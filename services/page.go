@@ -41,7 +41,7 @@ func GetPages(c *gin.Context) {
 	responseBody["success"] = true
 	responseBody["message"] = "page"
 
-	pages := make([]map[string]interface{}, 0)
+	pages := make(map[string]interface{}, 0)
 
 	for results.Next(ctx) {
 		var pgs entities.Pages
@@ -113,18 +113,38 @@ func GetPages(c *gin.Context) {
 				}
 
 				// Handle different content structures
-				var contentData interface{}
+				var contentData []interface{}
 
-				if contentArray, ok := col.Content.([]entities.Content); ok && len(contentArray) > 0 {
-					// Handle the case where "content" is an array of objects
-					contentData = contentArray
-				} else if contentObject, ok := col.Content.(entities.Content); ok {
-					// Handle the case where "content" is an object
-					contentData = contentObject
+				if col.Content != nil {
+					// Check if the "content" is an array of objects
+					if contentArray, ok := col.Content.([]entities.Content); ok {
+						for _, item := range contentArray {
+							// Convert each item into an object without keys
+							contentItem := map[string]interface{}{
+								"alt":   item.Alt,
+								"link":  item.Link,
+								"image": item.Image,
+							}
+							contentData = append(contentData, contentItem)
+						}
+					} else if contentObject, ok := col.Content.(entities.Content); ok {
+						// Convert the content object into an object without keys
+						contentItem := map[string]interface{}{
+							"alt":   contentObject.Alt,
+							"link":  contentObject.Link,
+							"image": contentObject.Image,
+						}
+						contentData = append(contentData, contentItem)
+					} else {
+						// Handle other cases where "content" is not an array or object
+						contentData = append(contentData, col.Content)
+					}
+				} else {
+					// If "content" is null in the database, set it to null in the response
+					contentData = nil
 				}
 
 				colMap["content"] = contentData
-
 				cols = append(cols, colMap)
 			}
 
@@ -135,13 +155,140 @@ func GetPages(c *gin.Context) {
 		}
 
 		pageMap["rows"] = rows
-		pages = append(pages, pageMap)
+		pages = pageMap
 	}
 
 	responseBody["body"] = pages
 
 	c.JSON(http.StatusCreated, responseBody)
 }
+
+//******************************************************************
+
+//*********************************************************************
+// func GetPages(c *gin.Context) {
+// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+// 	defer cancel()
+
+// 	mode := c.Query("mode")
+
+// 	filter := bson.M{}
+
+// 	if mode != "" {
+// 		filter["mode"] = mode
+// 	}
+
+// 	results, err := pagesCollection.Find(ctx, filter)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to retrieve collection"})
+// 		return
+// 	}
+// 	defer results.Close(ctx)
+
+// 	var responseBody = make(map[string]interface{})
+
+// 	responseBody["success"] = true
+// 	responseBody["message"] = "page"
+
+// 	var pages []interface{}
+
+// 	for results.Next(ctx) {
+// 		var pgs entities.Pages
+// 		err := results.Decode(&pgs)
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+// 			return
+// 		}
+
+// 		// Modify pgs.Meta if needed
+// 		if pgs.Mode == "desktop" {
+// 			pgs.Meta.Title = ""
+// 			pgs.Meta.Description = ""
+// 		}
+
+// 		page := map[string]interface{}{
+// 			"meta": pgs.Meta,
+// 			"mode": pgs.Mode,
+// 			"rows": []interface{}{}, // Initialize rows array
+// 		}
+
+// 		for _, rowID := range pgs.Rows {
+// 			var row entities.Row
+// 			err := rowCollection.FindOne(ctx, bson.M{"_id": rowID}).Decode(&row)
+// 			if err != nil {
+// 				c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to fetch row information"})
+// 				return
+// 			}
+
+// 			rowMap := map[string]interface{}{
+// 				"fluid":           row.Fluid,
+// 				"backgroundColor": row.BackgroundColor,
+// 				"cols":            []interface{}{}, // Initialize cols array
+// 			}
+
+// 			for _, colID := range row.Cols {
+// 				log.Printf("Fetching data for column ID: %d", colID) // Add this line
+// 				var col entities.Column
+// 				err := colCollection.FindOne(ctx, bson.M{"_id": colID}).Decode(&col)
+// 				if err != nil {
+// 					log.Printf("Failed to fetch column information for column ID %d: %v", colID, err)
+// 					c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to fetch column information"})
+// 					return
+// 				}
+
+// 				colMap := map[string]interface{}{
+// 					"size":            col.Size,
+// 					"elevation":       col.Elevation,
+// 					"padding":         col.Padding,
+// 					"radius":          col.Radius,
+// 					"margin":          col.Margin,
+// 					"backgroundColor": col.BackgroundColor,
+// 					"dataUrl":         col.DataUrl,
+// 					"isMore":          col.IsMore,
+// 					"dataType":        col.DataType,
+// 					"layoutType":      col.LayoutType,
+// 					"moreUrl":         col.MoreUrl,
+// 					"name":            col.Name,
+// 					"rowId":           col.RowId,
+// 					"createdAt":       col.CreatedAt,
+// 					"updatedAt":       col.UpdatedAt,
+// 					"__v":             col.V,
+// 				}
+
+// 				switch col.Content.(type) {
+// 				case []interface{}:
+// 					contentArray := col.Content.([]interface{})
+// 					// Handle the case where contentArray is an array
+// 					var contentData []interface{}
+// 					for _, item := range contentArray {
+// 						contentItem := item.(map[string]interface{})
+// 						contentData = append(contentData, contentItem)
+// 					}
+// 					colMap["content"] = contentData
+
+// 				case map[string]interface{}:
+// 					// Handle the case where col.Content is an object
+// 					contentData := col.Content.(map[string]interface{})
+// 					colMap["content"] = contentData
+// 				}
+
+// 				rowMap["cols"] = append(rowMap["cols"].([]interface{}), colMap)
+// 			}
+
+// 			page["rows"] = append(page["rows"].([]interface{}), rowMap)
+// 		}
+
+// 		pages = append(pages, page)
+// 	}
+
+// 	responseBody["body"] = map[string]interface{}{
+// 		"pages": pages,
+// 	}
+
+// 	c.JSON(http.StatusOK, responseBody)
+// }
+
+//**************************************************************************************************************************
 
 // func GetPages(c *gin.Context) {
 // 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -251,6 +398,8 @@ func GetPages(c *gin.Context) {
 
 // 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "page", "body": responseBody})
 // }
+
+//**********************************************************************************************
 
 // func GetPages(c *gin.Context) {
 // 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -375,6 +524,8 @@ func GetPages(c *gin.Context) {
 
 // 	c.JSON(http.StatusOK, responseBody)
 // }
+
+//************************************************************************************
 
 // func handleColumnContent(content interface{}) ([]entities.Content, error) {
 // 	var contentData []entities.Content

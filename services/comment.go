@@ -51,7 +51,7 @@ func AddComment(c *gin.Context) {
 	message.UserId = id
 
 	// Bind form data to the message using lowercase field names
-	if err := c.ShouldBind(&message); err != nil {
+	if err := c.ShouldBindJSON(&message); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid form data"})
 		return
 	}
@@ -62,14 +62,14 @@ func AddComment(c *gin.Context) {
 	// Set CreatedAt and UpdatedAt fields
 	message.CreatedAt = time.Now()
 	message.UpdatedAt = time.Now()
-	message.Title = c.PostForm("title")
-	message.Text = c.PostForm("text")
+	// message.Title = c.PostForm("title")
+	// message.Text = c.PostForm("text")
 
-	// Check if title and text fields are provided
-	if message.Title == "" || message.Text == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Title and Text fields are required"})
-		return
-	}
+	// // Check if title and text fields are provided
+	// if message.Title == "" || message.Text == "" {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Title and Text fields are required"})
+	// 	return
+	// }
 
 	// Generate a new ObjectID for the message
 	message.Id = primitive.NewObjectID()
@@ -81,7 +81,7 @@ func AddComment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "comment_added", "body": gin.H{}})
-	//c.JSON(http.StatusNoContent, gin.H{})
+	c.JSON(http.StatusNoContent, gin.H{})
 }
 
 func GetComment(c *gin.Context) {

@@ -19,7 +19,8 @@ func ProRouter(r *gin.RouterGroup) {
 
 	adminAuth.POST("/addproduct", services.AddProduct())
 	pro.GET("/products/:slug", services.GetProductBySlug)
-	pro.GET("/products", services.GetProductsByField)
+	pro.GET("/products/", services.GetProductsByField)
+	pro.GET("/products", services.GetProductsByCategory)
 
 }
 
@@ -30,6 +31,8 @@ func CategoryRouter(r *gin.RouterGroup) {
 
 	c.GET("/categories", services.FindAllCategories)
 	ca.POST("/add", services.AddCategories)
+	c.GET("/categories/:slug", services.GetOneGategory)
+	//c.GET("/products", services.GetProductsByCategory)
 }
 func AdminRoutes(r *gin.RouterGroup) {
 	u := r.Group("/")
@@ -119,7 +122,7 @@ func CommentRoute(r *gin.RouterGroup) {
 	c := r.Group("/")
 	c.Use(auth.UserAuthenticate)
 	c.POST("products/:productID/comments", services.AddComment)
-	//com.OPTIONS("products/:productID/comments", services.AddComment)
+	//c.OPTIONS("products/:productID/comments", services.AddComment)
 	com.GET("products/:slug/comments", services.GetComment)
 }
 func FavoriteRoute(r *gin.RouterGroup) {
