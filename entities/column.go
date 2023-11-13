@@ -1,6 +1,8 @@
 package entities
 
-import "time"
+import (
+	"time"
+)
 
 type Column struct {
 	ID              int         `json:"_id" bson:"_id"`
@@ -30,6 +32,11 @@ type Size struct {
 	LG int `json:"lg" bson:"lg"`
 }
 
+type ContentField struct {
+	SingleContent *Content   `json:"singleContent,omitempty" bson:"singleContent,omitempty"`
+	ArrayContent  []*Content `json:"arrayContent,omitempty" bson:"arrayContent,omitempty"`
+}
+
 type Content struct {
 	Alt   string    `json:"alt" bson:"alt"`
 	Link  string    `json:"link" bson:"link"`
@@ -41,12 +48,27 @@ type ImageCont struct {
 	Id  string `json:"_id" bson:"_id"`
 }
 
-// Define a custom type to handle the desired format for "content"
-type CustomContent struct {
-	Alt   string `json:"alt"`
-	Link  string `json:"link"`
-	Image struct {
-		URL string `json:"url"`
-		Id  string `json:"_id"`
-	} `json:"image"`
-}
+// type ContentObject struct {
+// 	Alt   string `json:"alt" bson:"alt"`
+// 	Link  string `json:"link" bson:"link"`
+// 	Image struct {
+// 		URL string `json:"url" bson:"url"`
+// 		ID  string `json:"_id" bson:"_id"`
+// 	} `json:"image" bson:"image"`
+// }
+// type ContentArray struct {
+// 	Alt   string `json:"alt" bson:"alt"`
+// 	Link  string `json:"link" bson:"link"`
+// 	Image struct {
+// 		URL string `json:"url" bson:"url"`
+// 	} `json:"image" bson:"image"`
+// }
+
+// type DocumentWithArray struct {
+// 	Column
+// 	Content []ContentObject `json:"content" bson:"content"`
+// }
+// type DocumentWithSingleObject struct {
+// 	Column
+// 	Content ContentArray `json:"content" bson:"content"`
+// }

@@ -17,7 +17,7 @@ import (
 var commentCollection *mongo.Collection = database.GetCollection(database.DB, "comments")
 
 //var proCollection *mongo.Collection = database.GetCollection(database.DB, "products")
-func AddComment(c *gin.Context) {
+func PostComment(c *gin.Context) {
 	var message entities.Comments
 	tokenClaims, exists := c.Get("tokenClaims")
 	if !exists {

@@ -146,6 +146,7 @@ func GetProductsByField(c *gin.Context) {
 	if c.DefaultQuery("amazing", "false") == "true" {
 		// If 'amazing' is "true," set the filter to fetch amazing products
 		filter["amazing"] = true
+
 	} else if c.DefaultQuery("amazing", "false") == "false" {
 		// If 'amazing' is "false," set the filter to fetch non-amazing products
 		filter["amazing"] = false
@@ -299,6 +300,7 @@ func GetProductsByCategory(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
 		}
+
 		categoryIDs = append(categoryIDs, catergory.ID.Hex())
 	}
 
