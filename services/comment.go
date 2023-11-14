@@ -16,7 +16,6 @@ import (
 
 var commentCollection *mongo.Collection = database.GetCollection(database.DB, "comments")
 
-//var proCollection *mongo.Collection = database.GetCollection(database.DB, "products")
 func PostComment(c *gin.Context) {
 	var message entities.Comments
 	tokenClaims, exists := c.Get("tokenClaims")
@@ -31,7 +30,6 @@ func PostComment(c *gin.Context) {
 		return
 	}
 
-	// Extract the product ID from the URL
 	productID := c.Param("productID")
 
 	// Check if the product ID is valid (you may want to add more validation)
@@ -43,7 +41,7 @@ func PostComment(c *gin.Context) {
 	// Convert the productID string to a primitive.ObjectID
 	productObjectID, err := primitive.ObjectIDFromHex(productID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Product ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -62,16 +60,7 @@ func PostComment(c *gin.Context) {
 	// Set CreatedAt and UpdatedAt fields
 	message.CreatedAt = time.Now()
 	message.UpdatedAt = time.Now()
-	// message.Title = c.PostForm("title")
-	// message.Text = c.PostForm("text")
 
-	// // Check if title and text fields are provided
-	// if message.Title == "" || message.Text == "" {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Title and Text fields are required"})
-	// 	return
-	// }
-
-	// Generate a new ObjectID for the message
 	message.Id = primitive.NewObjectID()
 
 	_, err = commentCollection.InsertOne(c, message)
@@ -98,11 +87,11 @@ func GetComment(c *gin.Context) {
 	err := proCollection.FindOne(ctx, bson.M{"slug": slug}).Decode(&com)
 
 	if err == mongo.ErrNoDocuments {
-		// No documents found, return the desired response with an empty array.
+
 		c.JSON(http.StatusOK, gin.H{"success": true, "message": "comments", "body": []entities.Product{}})
 		return
 	} else if err != nil {
-		// Other errors
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

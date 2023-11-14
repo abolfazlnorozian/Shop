@@ -18,44 +18,6 @@ var pagesCollection *mongo.Collection = database.GetCollection(database.DB, "pag
 var rowCollection *mongo.Collection = database.GetCollection(database.DB, "rows")
 var colCollection *mongo.Collection = database.GetCollection(database.DB, "columns")
 
-// func GetPages(c *gin.Context) {
-
-// 	mode := c.DefaultQuery("mode", "")
-// 	filter := bson.M{}
-
-// 	if mode != "" {
-// 		filter["mode"] = mode
-
-// 	}
-// 	cur, err := pagesCollection.Find(c, filter)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	fmt.Println("cur:", cur)
-// 	defer cur.Close(c)
-// 	var pages []entities.Pages
-// 	// responseBody["success"]=true
-// 	// responseBody["message"]="page"
-
-// 	for cur.Next(c) {
-// 		var pgs entities.Pages
-// 		err := cur.Decode(&pgs)
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-// 			return
-// 		}
-
-// 		pageMap := map[string]interface{}{
-// 			"_id": pgs.Id,
-// 		}
-
-// 	}
-
-// }
-
-//***********************************************************************************************
-
 func GetPages(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
