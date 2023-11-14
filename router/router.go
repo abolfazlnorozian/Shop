@@ -121,8 +121,8 @@ func CommentRoute(r *gin.RouterGroup) {
 	com := r.Group("/")
 	c := r.Group("/")
 	c.Use(auth.UserAuthenticate)
-	c.POST("products/:productID/comments", services.AddComment)
-	//c.OPTIONS("products/:productID/comments", services.AddComment)
+	c.POST("products/:productID/comments", services.PostComment)
+	c.OPTIONS("products/:productID/comments", services.PostComment)
 	com.GET("products/:slug/comments", services.GetComment)
 }
 func FavoriteRoute(r *gin.RouterGroup) {

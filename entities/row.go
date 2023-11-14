@@ -1,6 +1,8 @@
 package entities
 
-import "time"
+import (
+	"time"
+)
 
 type Row struct {
 	ID              int       `json:"_id" bson:"_id"`
