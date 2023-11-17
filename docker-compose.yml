@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    container_name: robin-app
+    ports:
+      - ${PORT}:${PORT}
+    environment:
+      - PORT=${PORT}
+      - MONGO_URL=${MONGO_URL}
+      - DBNAME=${DBNAME}
+    depends_on:
+      - mongo
+    volumes:
+      - robin-app:/app/public/images
+
+  mongo:
+    image: mongo:4.4.18
+    container_name: robin-mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - robin-mongo:/data/db
+
+volumes:
+  robin-mongo:
+  robin-app:

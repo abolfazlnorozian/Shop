@@ -56,3 +56,9 @@ If all tests pass, start the HTTP service with:
 ```bash
 go run main.go
 ```
+
+## Docker
+To start the service in docker, run the following command.
+```
+docker-compose up -d
+```
