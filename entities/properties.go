@@ -3,7 +3,7 @@ package entities
 import "time"
 
 type Properties struct {
-	Id        int       `json:"_id" bson:"_id"`
+	ID        int       `json:"_id" bson:"_id"`
 	Parent    int       `json:"parent" bson:"parent"`
 	Name      string    `json:"name" bson:"name"`
 	CreatedAt time.Time `json:"createdAt" bson:"createdAt"`
