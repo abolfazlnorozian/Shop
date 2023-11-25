@@ -7,10 +7,12 @@ import (
 )
 
 type Order struct {
-	Id                int                `json:"_id" bson:"_id,omitempty"`
+	Id                interface{}        `json:"_id" bson:"_id,omitempty"`
+	IsCoupon          bool               `json:"isCoupon" bson:"isCoupon"`
 	StartDate         time.Time          `json:"startDate" bson:"startDate"`
 	Status            string             `json:"status" bson:"status"`
 	PaymentStatus     string             `json:"paymentStatus" bson:"paymentStatus"`
+	Massage           string             `json:"message" bson:"message"`
 	TotalPrice        int                `json:"totalPrice" bson:"totalPrice"`
 	TotalDiscount     float64            `json:"totalDiscount" bson:"totalDiscount"`
 	TotalQuantity     int                `json:"totalQuantity" bson:"totalQuantity"`
@@ -33,13 +35,24 @@ type Product struct {
 	Name            string             `json:"name" bson:"name"`
 	Price           int                `json:"price" bson:"price"`
 	DiscountPercent float64            `json:"discountPercent" bson:"discountPercent"`
+	ProductId       primitive.ObjectID `json:"productId" bson:"productId"`
 }
 type Addrs struct {
-	Id         primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	Address    string             `json:"address" bson:"address" binding:"required"`
-	City       string             `json:"city" bson:"city" binding:"required"`
-	Latitude   float64            `json:"latitude" bson:"latitude"`
-	Longitude  float64            `json:"longitude" bson:"longitude"`
-	PostalCode interface{}        `json:"postalCode" bson:"postalCode" binding:"required"`
-	State      string             `json:"state" bson:"state" binding:"required"`
+	Id      primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	Address string             `json:"address" bson:"address" binding:"required"`
+	City    string             `json:"city" bson:"city" binding:"required"`
+	// Latitude   float64            `json:"latitude" bson:"latitude"`
+	// Longitude  float64            `json:"longitude" bson:"longitude"`
+	PostalCode interface{} `json:"postalCode" bson:"postalCode" binding:"required"`
+	State      string      `json:"state" bson:"state" binding:"required"`
 }
+
+// type ResponseProduct struct {
+// 	Quantity        int                `json:"quantity" bson:"quantity"`
+// 	VariationKey    []int              `json:"variationsKey" bson:"variationsKey"`
+// 	Id              primitive.ObjectID `json:"_id" bson:"_id"`
+// 	Name            string             `json:"name" bson:"name"`
+// 	Price           int                `json:"price" bson:"price"`
+// 	DiscountPercent float64            `json:"discountPercent" bson:"discountPercent"`
+// 	ProductId       primitive.ObjectID `json:"productId" bson:"productId"`
+// }

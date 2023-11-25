@@ -66,8 +66,8 @@ func UserRoute(r *gin.RouterGroup) {
 	us.POST("/auth/login", services.LoginUsers)
 	us.OPTIONS("/auth/login", services.LoginUsers)
 	authAdmin.GET("/users2", services.GetAllUsers)
-	authUser.PUT("/users/", services.UpdatedUser)
-	authUser.OPTIONS("/users/", services.UpdatedUser)
+	authUser.PUT("/users2/", services.UpdatedUser)
+	// authUser.OPTIONS("/users2/", services.UpdatedUser)
 	authUser.GET("/users", services.GetUserByToken)
 	authUser.OPTIONS("/users", services.GetUserByToken)
 	authUser.POST("/users/addresses", services.PostAddresses)
@@ -79,12 +79,15 @@ func UserRoute(r *gin.RouterGroup) {
 }
 func OrderRouter(r *gin.RouterGroup) {
 	or := r.Group("/")
-	ordr := r.Group("/")
+	ordr := r.Group("/users")
 	or.Use(auth.AdminAuthenticate())
 	ordr.Use(auth.UserAuthenticate)
 
-	or.GET("orders", services.FindordersByadmin)
-	ordr.POST("addorder", services.AddOrder)
+	or.GET("/orders", services.FindordersByadmin)
+	ordr.POST("/orders", services.AddOrder)
+	ordr.OPTIONS("/orders", services.AddOrder)
+	ordr.GET("/orders/:id", services.GetOrder)
+	ordr.OPTIONS("/orders/:id", services.GetOrder)
 }
 func CartRouter(r *gin.RouterGroup) {
 	ca := r.Group("/users")

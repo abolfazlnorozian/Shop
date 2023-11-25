@@ -14,7 +14,7 @@ type Users struct {
 	Username            string                `json:"username" form:"username" bson:"username"`
 	VerifyCode          *string               `json:"password" form:"password" bson:"verifyCode"`
 	PhoneNumber         string                `json:"phoneNumber" form:"phone" bson:"phoneNumber"`
-	Sex                 int                   `json:"sex" bson:"sex"`
+	Sex                 interface{}           `json:"sex" bson:"sex"`
 	Role                string                `json:"role" bson:"role"`
 	Address             []Addr                `json:"addresses" bson:"addresses"`
 	CreatedAt           time.Time             `json:"createdAt" bson:"createdAt"`
@@ -33,5 +33,7 @@ type Addr struct {
 	City       string             `json:"city" bson:"city"`
 	State      string             `json:"state" bson:"state"`
 	Address    string             `json:"address" bson:"address"`
-	PostalCode interface{}        `json:"postalcode" bson:"postalcode"`
+	PostalCode interface{}        `json:"postalCode" bson:"postalCode"`
+	// Latitude   interface{}        `json:"latitude" bson:"latitude"`
+	// Longitude  interface{}        `json:"longitude" bson:"longitude"`
 }

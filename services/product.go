@@ -154,19 +154,13 @@ func fetchCategoryDetails(ctx context.Context, categoryIDs []primitive.ObjectID)
 
 func GetProductsByField(c *gin.Context) {
 
-	// Set a default filter to fetch all products
-	filter1 := bson.M{}
-	filter2 := bson.M{}
-	filter3 := bson.M{}
+	filter := bson.M{}
 
 	// Check if the 'amazing' parameter is set to "true"
-	if c.DefaultQuery("amazing", "false") == "true" {
+	if c.DefaultQuery("amazing", "") == "true" {
 		// If 'amazing' is "true," set the filter to fetch amazing products
-		filter1["amazing"] = true
+		filter["amazing"] = true
 
-	} else if c.DefaultQuery("amazing", "false") == "false" {
-		// If 'amazing' is "false," set the filter to fetch non-amazing products
-		filter1["amazing"] = false
 	}
 
 	// Check if the 'onlyexists' parameter is set to "true"
@@ -176,12 +170,12 @@ func GetProductsByField(c *gin.Context) {
 	// Determine the filter based on parameters
 	if onlyExistsParam == "true" || (onlyExistsParam == "true" && isNewParam == "1") {
 		// If 'onlyexists' is "true" or 'onlyexists' is "true" and 'new' is "1," allow fetching all products
-		filter3 = bson.M{}
+		filter = bson.M{}
 	}
 	// Fetch products based on the 'categoryId' parameter
 	categoryId := c.DefaultQuery("categoryid", "")
 	if categoryId != "" {
-		filter2["categoryId"] = categoryId
+		filter["categoryId"] = categoryId
 	}
 
 	// Pagination parameters from the query
@@ -195,42 +189,19 @@ func GetProductsByField(c *gin.Context) {
 	skip := (page - 1) * limit
 
 	// Calculate total number of documents in the collection
-	totalDocs, err := proCollection.CountDocuments(ctx, filter1)
+	totalDocs, err := proCollection.CountDocuments(ctx, filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to count products"})
 		return
 	}
-	totalDocs, err = proCollection.CountDocuments(ctx, filter3)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to count products"})
-		return
-	}
-	// Calculate total number of documents in the collection
-	totalDocs, err = proCollection.CountDocuments(ctx, filter2)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to count products"})
-		return
-	}
-
+	// fmt.Println("totalDocts:", totalDocs)
 	// Fetch products based on the constructed filter
-	results, err := proCollection.Find(ctx, filter1, options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to query products"})
-		return
-	}
-	// Fetch products based on the constructed filter
-	results, err = proCollection.Find(ctx, filter3, options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)))
+	results, err := proCollection.Find(ctx, filter, options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to query products"})
 		return
 	}
 
-	// Fetch products based on the constructed filter
-	results, err = proCollection.Find(ctx, filter2, options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to query products"})
-		return
-	}
 	defer results.Close(ctx)
 	var products []entities.Products
 
@@ -241,6 +212,7 @@ func GetProductsByField(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
 		}
+		fmt.Println("pro:", pro.Amazing)
 		products = append(products, pro)
 	}
 
