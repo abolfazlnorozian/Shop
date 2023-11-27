@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"net/http"
 	"shop/auth"
@@ -70,8 +69,6 @@ func GetProductBySlug(c *gin.Context) {
 			ID:     value.ID,
 		})
 	}
-
-	fmt.Println("pro:", pro)
 
 	dimensions, err := fetchPropertyDetails(ctx, pro)
 	if err != nil {
@@ -148,9 +145,7 @@ func fetchCategoryDetails(ctx context.Context, categoryIDs []primitive.ObjectID)
 	return categories, nil
 }
 
-//*******************************************************************************
-
-//************************************************************************88
+//*****************************************************************************
 
 func GetProductsByField(c *gin.Context) {
 
@@ -164,18 +159,53 @@ func GetProductsByField(c *gin.Context) {
 	}
 
 	// Check if the 'onlyexists' parameter is set to "true"
-	onlyExistsParam := c.DefaultQuery("onlyexists", "false")
-	isNewParam := c.DefaultQuery("new", "0")
+	onlyExistsParam := c.DefaultQuery("onlyexists", "")
+	isNewParam := c.DefaultQuery("new", "")
 
-	// Determine the filter based on parameters
-	if onlyExistsParam == "true" || (onlyExistsParam == "true" && isNewParam == "1") {
+	if onlyExistsParam == "true" {
 		// If 'onlyexists' is "true" or 'onlyexists' is "true" and 'new' is "1," allow fetching all products
+		filter = bson.M{}
+	}
+
+	if onlyExistsParam == "true" && isNewParam == "1" {
+
 		filter = bson.M{}
 	}
 	// Fetch products based on the 'categoryId' parameter
 	categoryId := c.DefaultQuery("categoryid", "")
 	if categoryId != "" {
 		filter["categoryId"] = categoryId
+	}
+	// If not all documents are requested, apply additional filter conditions
+	categoryName := c.DefaultQuery("category", "")
+	if categoryName != "" {
+		// Lookup the category by slug
+		var category entities.Category
+		err := categoryCollection.FindOne(context.Background(), bson.M{"slug": categoryName}).Decode(&category)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"message": "Category not found"})
+			return
+		}
+
+		categoryIDs, err := searchChildrenIDs(*category.ID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
+		}
+
+		// fmt.Println(categoryIDs)
+		if categoryIDs != nil {
+			var categoryID []string
+			for _, catID := range categoryIDs {
+
+				categoryID = append(categoryID, catID.ID.Hex())
+			}
+
+			filter["categoryId"] = bson.M{"$in": categoryID}
+
+		} else {
+			filter["categoryId"] = category.ID.Hex()
+		}
+
 	}
 
 	// Pagination parameters from the query
@@ -212,7 +242,7 @@ func GetProductsByField(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
 		}
-		fmt.Println("pro:", pro.Amazing)
+
 		products = append(products, pro)
 	}
 
@@ -273,8 +303,8 @@ func GetProductsByField(c *gin.Context) {
 }
 
 //***********************************************************************
+//***********************************************************************
 
-//**********************************************************************8
 func searchChildrenIDs(categoryID primitive.ObjectID) ([]entities.Category, error) {
 	cur, err := categoryCollection.Find(context.Background(), bson.M{"parent": categoryID})
 	if err != nil {
@@ -290,20 +320,21 @@ func searchChildrenIDs(categoryID primitive.ObjectID) ([]entities.Category, erro
 			return nil, err
 		}
 
-		// // Recursively search for children IDs
-		// childrenIDs, err := searchChildrenIDs(category.ID.Hex())
-		// if err != nil {
-		// 	return nil, err
-		// }
+		// Recursively search for children IDs
+		childrenIDs, err := searchChildrenIDs(*category.ID)
+		if err != nil {
+			return nil, err
+		}
 
+		// Append the current category and its children
 		categoryIDs = append(categoryIDs, category)
-		// categoryIDs = append(categoryIDs, childrenIDs...)
+		categoryIDs = append(categoryIDs, childrenIDs...)
 	}
 
 	return categoryIDs, nil
 }
 
-func GetProductsByCategory(c *gin.Context) {
+func GetOneProductByCategory(c *gin.Context) {
 	// Set a default filter to fetch all products
 	filter := bson.M{}
 
@@ -330,7 +361,7 @@ func GetProductsByCategory(c *gin.Context) {
 
 				categoryID = append(categoryID, catID.ID.Hex())
 			}
-			fmt.Println("categoryId:", categoryID)
+
 			filter["categoryId"] = bson.M{"$in": categoryID}
 
 		} else {

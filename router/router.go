@@ -19,8 +19,9 @@ func ProRouter(r *gin.RouterGroup) {
 
 	adminAuth.POST("/addproduct", services.AddProduct())
 	pro.GET("/products/:slug", services.GetProductBySlug)
+	// pro.GET("/products", services.GetProductsByOneField)
 	pro.GET("/products", services.GetProductsByField)
-	pro.GET("/products/", services.GetProductsByCategory)
+	pro.GET("/products/", services.GetOneProductByCategory)
 
 }
 
