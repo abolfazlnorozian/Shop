@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"net/http"
 	"shop/auth"
@@ -158,25 +159,56 @@ func GetProductsByField(c *gin.Context) {
 
 	}
 
-	// Check if the 'onlyexists' parameter is set to "true"
-	onlyExistsParam := c.DefaultQuery("onlyexists", "")
-	isNewParam := c.DefaultQuery("new", "")
+	// onlyExistsParam := c.DefaultQuery("onlyexists", "")
+	// isNewParam := c.DefaultQuery("new", "")
 
-	if onlyExistsParam == "true" {
-		// If 'onlyexists' is "true" or 'onlyexists' is "true" and 'new' is "1," allow fetching all products
-		filter = bson.M{}
-	}
+	// if onlyExistsParam == "true" {
 
-	if onlyExistsParam == "true" && isNewParam == "1" {
+	// 	filter = bson.M{}
+	// }
 
-		filter = bson.M{}
-	}
-	// Fetch products based on the 'categoryId' parameter
+	// if onlyExistsParam == "true" && isNewParam == "1" {
+
+	// 	filter = bson.M{}
+	// }
+
 	categoryId := c.DefaultQuery("categoryid", "")
 	if categoryId != "" {
-		filter["categoryId"] = categoryId
+		// Convert the categoryId string to ObjectID
+		objectID, err := primitive.ObjectIDFromHex(categoryId)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid Object ID"})
+			return
+		}
+		fmt.Println("object:", objectID)
+		// Lookup the category by slug
+		var category entities.Category
+		err = categoryCollection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&category)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"message": "Category not found"})
+			return
+		}
+
+		categoryIDs, err := searchChildrenIDs(*category.ID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
+		}
+
+		// fmt.Println(categoryIDs)
+		if categoryIDs != nil {
+			var categoryID []string
+			for _, catID := range categoryIDs {
+
+				categoryID = append(categoryID, catID.ID.Hex())
+			}
+
+			filter["categoryId"] = bson.M{"$in": categoryID}
+
+		} else {
+			filter["categoryId"] = category.ID.Hex()
+		}
 	}
-	// If not all documents are requested, apply additional filter conditions
+
 	categoryName := c.DefaultQuery("category", "")
 	if categoryName != "" {
 		// Lookup the category by slug
@@ -207,6 +239,28 @@ func GetProductsByField(c *gin.Context) {
 		}
 
 	}
+	// search := c.DefaultQuery("search", "")
+	// var products2 []entities.Products
+	// if search != "" {
+
+	// 	res, err := proCollection.Find(c, bson.M{"name_fuzzy": search})
+	// 	if err != nil {
+	// 		c.JSON(http.StatusNotFound, gin.H{"message": "product not found"})
+	// 		return
+	// 	}
+	// 	defer res.Close(c)
+	// 	for res.Next(c) {
+	// 		var pro entities.Products
+	// 		err := res.Decode(&pro)
+	// 		if err != nil {
+	// 			c.JSON(http.StatusNotFound, gin.H{"message": "product not found"})
+	// 			return
+	// 		}
+	// 		products2 = append(products2, pro)
+	// 	}
+
+	// }
+	fmt.Println("filter:", filter)
 
 	// Pagination parameters from the query
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -300,6 +354,7 @@ func GetProductsByField(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+	// c.JSON(http.StatusOK, gin.H{"pages": 1, "docs": products2})
 }
 
 //***********************************************************************
