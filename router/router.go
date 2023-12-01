@@ -22,6 +22,7 @@ func ProRouter(r *gin.RouterGroup) {
 
 	pro.GET("/products", services.GetProductsByFields)
 	pro.GET("/products/", services.GetProductByCategory)
+	pro.GET("/mix-products", services.MixProducts)
 
 }
 

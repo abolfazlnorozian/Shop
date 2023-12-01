@@ -21,6 +21,7 @@ import (
 
 var proCollection *mongo.Collection = database.GetCollection(database.DB, "products")
 var propertiesCollection *mongo.Collection = database.GetCollection(database.DB, "properties")
+var mixProductCollection *mongo.Collection = database.GetCollection(database.DB, "mixproducts")
 
 type ProductWithCategories struct {
 	entities.Products
@@ -754,6 +755,29 @@ func UndefindProduct(c *gin.Context) {
 
 	// // c.JSON(http.StatusOK, gin.H{"pages": 1, "docs": products})
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "category", "body": nil})
+}
+
+func MixProducts(c *gin.Context) {
+	var mixProducts []entities.MixProducts
+	cur, err := mixProductCollection.Find(c, bson.M{})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"massage": "Not Find Collection"})
+		return
+	}
+	defer cur.Close(c)
+	for cur.Next(c) {
+		var mix entities.MixProducts
+		err := cur.Decode(&mix)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+
+		}
+		mixProducts = append(mixProducts, mix)
+
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "mix_products", "body": mixProducts})
+
 }
 
 // func FindAllProducts(c *gin.Context) {
