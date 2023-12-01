@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"net/http"
 	"shop/auth"
@@ -174,6 +175,7 @@ func GetProductsByFields(c *gin.Context) {
 //*****************************************************************************
 func GetSearch(c *gin.Context) {
 	filter := bson.M{}
+	projection := bson.M{"name_fuzzy": 0}
 
 	searchQuery := c.DefaultQuery("search", "")
 	if searchQuery != "" {
@@ -189,7 +191,7 @@ func GetSearch(c *gin.Context) {
 	}
 
 	var products []entities.Products
-	cur, err := proCollection.Find(c, filter)
+	cur, err := proCollection.Find(c, filter, options.Find().SetProjection(projection))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 		return
@@ -204,6 +206,10 @@ func GetSearch(c *gin.Context) {
 		}
 		products = append(products, pro)
 	}
+	for _, p := range products {
+		fmt.Println(p.ID)
+	}
+	// return products,nil
 
 	c.JSON(http.StatusOK, gin.H{"pages": 1, "docs": products})
 }
@@ -717,6 +723,37 @@ func searchChildrenIDs(categoryID primitive.ObjectID) ([]entities.Category, erro
 	}
 
 	return categoryIDs, nil
+}
+
+//************************************************************************************
+func UndefindProduct(c *gin.Context) {
+	// products,err:=GetSearch(c)
+	// var p entities.Products
+	// cur, err := proCollection.Find(c, bson.M{})
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+	// 	return
+	// }
+
+	// var products []entities.Products
+
+	// defer cur.Close(c)
+	// for cur.Next(c) {
+	// 	var pro entities.Products
+	// 	err := cur.Decode(&pro)
+	// 	if err != nil {
+	// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+	// 		return
+	// 	}
+	// 	// fmt.Println(pro.ID)
+	// 	products = append(products, pro)
+	// }
+	// // for _, p := range products {
+	// // 	// fmt.Println(p.ID)
+	// // }
+
+	// // c.JSON(http.StatusOK, gin.H{"pages": 1, "docs": products})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "category", "body": nil})
 }
 
 // func FindAllProducts(c *gin.Context) {

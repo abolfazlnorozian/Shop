@@ -33,7 +33,7 @@ func CategoryRouter(r *gin.RouterGroup) {
 	c.GET("/categories", services.FindAllCategories)
 	ca.POST("/add", services.AddCategories)
 	c.GET("/categories/:slug", services.GetOneGategory)
-	//c.GET("/products", services.GetProductsByCategory)
+	c.GET("/categories/undefined", services.UndefindProduct)
 }
 func AdminRoutes(r *gin.RouterGroup) {
 	u := r.Group("/")

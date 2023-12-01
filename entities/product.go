@@ -24,7 +24,7 @@ type Products struct {
 	Name            string               `json:"name" bson:"name"`
 	Price           int                  `json:"price" bson:"price"`
 	Details         string               `json:"details" bson:"details"`
-	DiscountPercent int                  `json:"discountPercent" bson:"discountPercent"`
+	DiscountPercent float64              `json:"discountPercent" bson:"discountPercent"`
 	Stock           int                  `json:"stock" bson:"stock"`
 	CategoryID      string               `json:"categoryId" bson:"categoryId"`
 	Attributes      []Attribute          `json:"attributes" bson:"attributes"`

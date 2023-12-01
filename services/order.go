@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"reflect"
 	"shop/auth"
@@ -82,11 +81,10 @@ func AddOrder(c *gin.Context) {
 		return
 	}
 	for _, user := range users.Address {
-		objectID := user.Id
+		// objectID := user.Id
 
-		// Initialize the order.Address with a new object
 		order.Address = entities.Addrs{
-			Id:         objectID,
+			Id:         user.Id,
 			Address:    user.Address,
 			City:       user.City,
 			PostalCode: user.PostalCode,
@@ -138,14 +136,13 @@ func AddOrder(c *gin.Context) {
 
 	}
 
-	// Iterate over products in the cart and add them to the order
 	for _, product := range cart.Products {
 
 		productID := product.ProductId
 		variationKey := product.VariationsKey
 		productQuantity := product.Quantity
-		fmt.Println("productId:", productID)
-		// Retrieve product data from "products" collection based on productID
+		// fmt.Println("productId:", productID)
+
 		var retrievedProduct entities.Products
 		// err := produCollection.FindOne(c, bson.M{"_id": productID, "variations": bson.M{"$elemMatch": bson.M{"keys": variationKey}}}).Decode(&retrievedProduct)
 		err := proCollection.FindOne(c, bson.M{"_id": productID}).Decode(&retrievedProduct)
@@ -153,13 +150,11 @@ func AddOrder(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"errorProduct": err.Error()})
 			return
 		}
-		// fmt.Println("reteriveProduct:", retrievedProduct)
-		// Check if the retrieved product is empty (not found)
+
 		if retrievedProduct.ID.IsZero() {
-			continue // Skip this product and move to the next one
+			continue
 		}
 
-		// Find the selected variation
 		var selectedVariation entities.Variation
 		for _, variation := range retrievedProduct.Variations {
 			if reflect.DeepEqual(variation.Keys, variationKey) {
@@ -168,36 +163,39 @@ func AddOrder(c *gin.Context) {
 			}
 		}
 
-		// Extract specific fields from retrievedProduct and create a new Product object
 		orderProduct := entities.Product{
-			Quantity:     productQuantity,
-			Id:           retrievedProduct.ID,
-			Name:         retrievedProduct.Name,
-			Price:        retrievedProduct.Price,
-			VariationKey: selectedVariation.Keys,
-			ProductId:    product.ProductId,
+			Quantity:        productQuantity,
+			Id:              retrievedProduct.ID,
+			Name:            retrievedProduct.Name,
+			Price:           retrievedProduct.Price,
+			VariationKey:    selectedVariation.Keys,
+			ProductId:       product.ProductId,
+			DiscountPercent: float64(retrievedProduct.DiscountPercent),
 		}
+
+		discount := orderProduct.Price * int(orderProduct.DiscountPercent) / 100
+
+		p := orderProduct.Price - (discount)
 
 		order.Products = append(order.Products, orderProduct)
 		order.TotalQuantity += productQuantity
-		order.TotalPrice += retrievedProduct.Price
+		order.TotalPrice += p
+		order.TotalDiscount += float64(discount)
+
 	}
 
-	// Remove the shopping cart from the "brandCollection"
 	_, err = cartCollection.DeleteOne(c, bson.M{"username": username})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove cart"})
 		return
 	}
 
-	// Insert order into the "ordersCollection"
 	_, err = ordersCollection.InsertOne(c, order)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Send the response to Postman
 	c.JSON(http.StatusOK, gin.H{"message": "order_added", "success": true, "body": gin.H{"orderId": order.Id}})
 }
 

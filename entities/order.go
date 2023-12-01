@@ -15,6 +15,8 @@ type Order struct {
 	Massage           string             `json:"message" bson:"message"`
 	TotalPrice        int                `json:"totalPrice" bson:"totalPrice"`
 	TotalDiscount     float64            `json:"totalDiscount" bson:"totalDiscount"`
+	AmountCoupon      int                `json:"amountCoupon" bson:"amountCoupon"`
+	CouponCode        string             `json:"couponCode" bson:"couponCode"`
 	TotalQuantity     int                `json:"totalQuantity" bson:"totalQuantity"`
 	PostalCost        int                `json:"postalCost" bson:"postalCost"`
 	UserId            primitive.ObjectID `json:"userId" bson:"userId"`
