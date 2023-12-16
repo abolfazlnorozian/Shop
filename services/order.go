@@ -137,6 +137,7 @@ func AddOrder(c *gin.Context) {
 
 	order.TotalDiscount = 0
 	order.PostalCost = 30000
+	op := order.PostalCost
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
 	order.V = 0
@@ -188,12 +189,12 @@ func AddOrder(c *gin.Context) {
 
 		discount := orderProduct.Price * int(orderProduct.DiscountPercent) / 100
 
-		p := orderProduct.Price*productQuantity - (discount)
-
+		p := orderProduct.Price*productQuantity - (discount * productQuantity)
+		Tp := p + op
 		order.Products = append(order.Products, orderProduct)
 		order.TotalQuantity += productQuantity
-		order.TotalPrice += p
-		order.TotalDiscount += float64(discount)
+		order.TotalPrice += Tp
+		order.TotalDiscount += float64(discount * productQuantity)
 
 	}
 
