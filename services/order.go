@@ -23,18 +23,31 @@ var produCollection *mongo.Collection = database.GetCollection(database.DB, "pro
 var countersCollection *mongo.Collection = database.GetCollection(database.DB, "identitycounters")
 var addusersCollection *mongo.Collection = database.GetCollection(database.DB, "brandschemas")
 
-func FindordersByadmin(c *gin.Context) {
-	if err := auth.CheckUserType(c, "admin"); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+func Findorders(c *gin.Context) {
+	// if err := auth.CheckUserType(c, "admin"); err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// 	return
 
+	// }
+	tokenClaims, exists := c.Get("tokenClaims")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+		return
 	}
+
+	claims, ok := tokenClaims.(*auth.SignedUserDetails)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+		return
+	}
+
+	ID := claims.Id
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	var orders []entities.Order
 	defer cancel()
 
-	results, err := ordersCollection.Find(ctx, bson.M{})
+	results, err := ordersCollection.Find(ctx, bson.M{"userId": ID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"massage": "Not Find Collection"})
 		return
@@ -52,7 +65,7 @@ func FindordersByadmin(c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": orders})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "orders", "body": orders})
 
 }
 
@@ -123,7 +136,7 @@ func AddOrder(c *gin.Context) {
 	order.Massage = ""
 
 	order.TotalDiscount = 0
-	order.PostalCost = 0
+	order.PostalCost = 30000
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
 	order.V = 0
@@ -175,7 +188,7 @@ func AddOrder(c *gin.Context) {
 
 		discount := orderProduct.Price * int(orderProduct.DiscountPercent) / 100
 
-		p := orderProduct.Price - (discount)
+		p := orderProduct.Price*productQuantity - (discount)
 
 		order.Products = append(order.Products, orderProduct)
 		order.TotalQuantity += productQuantity
@@ -199,7 +212,7 @@ func AddOrder(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "order_added", "success": true, "body": gin.H{"orderId": order.Id}})
 }
 
-func GetOrder(c *gin.Context) {
+func GetOrderByID(c *gin.Context) {
 	orderID := c.Param("id")
 
 	// Convert orderID to int
@@ -247,6 +260,7 @@ func GetOrder(c *gin.Context) {
 		CreatedAt:     orders.CreatedAt,
 		UpdatedAt:     orders.UpdatedAt,
 		V:             orders.V,
+		PaymentId:     orders.PaymentId,
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "order", "body": order})

@@ -85,11 +85,11 @@ func OrderRouter(r *gin.RouterGroup) {
 	or.Use(auth.AdminAuthenticate())
 	ordr.Use(auth.UserAuthenticate)
 
-	or.GET("/orders", services.FindordersByadmin)
+	ordr.GET("/orders", services.Findorders)
 	ordr.POST("/orders", services.AddOrder)
 	ordr.OPTIONS("/orders", services.AddOrder)
-	ordr.GET("/orders/:id", services.GetOrder)
-	ordr.OPTIONS("/orders/:id", services.GetOrder)
+	ordr.GET("/orders/:id", services.GetOrderByID)
+	ordr.OPTIONS("/orders/:id", services.GetOrderByID)
 }
 func CartRouter(r *gin.RouterGroup) {
 	ca := r.Group("/users")

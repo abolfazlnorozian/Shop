@@ -39,6 +39,8 @@ func AddCatrs(c *gin.Context) {
 	var input struct {
 		ProductId     primitive.ObjectID `json:"productId"`
 		VariationsKey []int              `json:"variationsKey"`
+		Quantity      int                `json:"quantity"`
+		QuantityState string             `json:"quantityState"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -63,12 +65,11 @@ func AddCatrs(c *gin.Context) {
 
 	cart.Products = []entities.ComeProduct{product}
 
-	// Check if a document with the same username exists
 	filter := bson.M{"username": username}
 	var existingDoc entities.Catrs
 	err := cartCollection.FindOne(c, filter).Decode(&existingDoc)
 	if err == nil {
-		// If an existing document is found, check if the productId already exists in the Products array
+
 		existingProductIndex := -1
 		for i, product := range existingDoc.Products {
 			if product.ProductId == cart.Products[0].ProductId && reflect.DeepEqual(product.VariationsKey, cart.Products[0].VariationsKey) {
@@ -78,11 +79,15 @@ func AddCatrs(c *gin.Context) {
 		}
 
 		if existingProductIndex != -1 {
-			// If productId already exists, increment the quantity by 1
-			existingDoc.Products[existingProductIndex].Quantity++
+			// If productId already exists, update the quantity
+			existingDoc.Products[existingProductIndex].Quantity = input.Quantity
+
+			// If the quantity becomes zero, remove the product from the cart
+			if input.Quantity == 0 {
+				existingDoc.Products = append(existingDoc.Products[:existingProductIndex], existingDoc.Products[existingProductIndex+1:]...)
+			}
 		} else {
-			// If productId doesn't exist, add the new product to the Products array with quantity 1
-			cart.Products[0].Quantity = 1
+			// If productId doesn't exist, add the new product to the Products array
 			existingDoc.Products = append(existingDoc.Products, cart.Products[0])
 		}
 
@@ -100,8 +105,6 @@ func AddCatrs(c *gin.Context) {
 		c.JSON(http.StatusCreated, gin.H{"success": true, "message": "cart_edited", "body": gin.H{}})
 		return
 	}
-
-	// If no existing document is found, create a new one with the first product and quantity 1
 
 	// Insert the new document into the database
 	_, err = cartCollection.InsertOne(c, cart)
