@@ -56,6 +56,7 @@ func Downloader(r *gin.RouterGroup) {
 	//down.GET("/uploads/:filename", upload.FindOneImage)
 
 }
+
 func UserRoute(r *gin.RouterGroup) {
 	us := r.Group("/users")
 	//us.Use(auth.UserAuthenticate())

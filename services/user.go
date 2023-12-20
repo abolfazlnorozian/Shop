@@ -66,6 +66,7 @@ func RegisterUsers(c *gin.Context) {
 		// Phone number already exists, generate a new verification code and username
 		newVerifycode := helpers.GenerateRandomCode(4)
 		fmt.Println(newVerifycode)
+		helpers.SendSms(newVerifycode, phoneNumber)
 		hashedCode, err := helpers.HashPassword(newVerifycode)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate verify code"})
@@ -99,6 +100,7 @@ func RegisterUsers(c *gin.Context) {
 		// Phone number doesn't exist, generate a new verification code and save the user
 		newVerifycode := helpers.GenerateRandomCode(4)
 		fmt.Println(newVerifycode)
+		helpers.SendSms(newVerifycode, phoneNumber)
 		hashedCode, err := helpers.HashPassword(newVerifycode)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate verify code"})
