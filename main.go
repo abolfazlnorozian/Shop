@@ -59,7 +59,13 @@ func main() {
 
 func corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:4000")
+
+		err := godotenv.Load(".env")
+		if err != nil {
+			log.Fatalln("error loading .env file")
+		}
+		cors := os.Getenv("CORS_DOMAIN")
+		c.Writer.Header().Set("Access-Control-Allow-Origin", cors)
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 

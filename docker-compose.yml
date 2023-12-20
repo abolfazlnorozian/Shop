@@ -9,6 +9,7 @@ services:
       - PORT=${PORT}
       - MONGO_URL=${MONGO_URL}
       - DBNAME=${DBNAME}
+      - CORS_DOMAIN=${CORS_DOMAIN}
     depends_on:
       - mongo
     volumes:
