@@ -23,6 +23,14 @@ var produCollection *mongo.Collection = database.GetCollection(database.DB, "pro
 var countersCollection *mongo.Collection = database.GetCollection(database.DB, "identitycounters")
 var addusersCollection *mongo.Collection = database.GetCollection(database.DB, "brandschemas")
 
+//@Summary GET Order
+//@Description Get Order by OrderId
+//@Tags Orders
+//@Accept json
+//@Produce json
+//@Param Authorization header string true "authorization" format("Bearer your_actual_token_here")
+//@Success 200 "Success"
+//@Router /api/users/orders [get]
 func Findorders(c *gin.Context) {
 	// if err := auth.CheckUserType(c, "admin"); err != nil {
 	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -69,6 +77,15 @@ func Findorders(c *gin.Context) {
 
 }
 
+//@Summary Post Order
+//@Description Post a Product to order
+//@Tags Orders
+//@Accept json
+//@Produce json
+//@Param Authorization header string true "authorization" format("Bearer your_actual_token_here")
+//@Param order body entities.Order true "Order object to be Ordered"
+//@Success 200 "Success"
+//@Router /api/users/orders [post]
 func AddOrder(c *gin.Context) {
 	var order entities.Order
 
@@ -214,6 +231,15 @@ func AddOrder(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "order_added", "success": true, "body": gin.H{"orderId": order.Id}})
 }
 
+//@Summary GET Order
+//@Description Get Order by OrderId
+//@Tags Orders
+//@Accept json
+//@Produce json
+//@Param Authorization header string true "authorization" format("Bearer your_actual_token_here")
+//@Param id path string true "Order ID to Get from an Order" format("hexadecimal ObjectId")
+//@Success 200 "Success"
+//@Router /api/users/orders/{id} [get]
 func GetOrderByID(c *gin.Context) {
 	orderID := c.Param("id")
 

@@ -11,6 +11,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+//@Summary Post Address
+//@Description Post Addresses for users
+//@Tags Address
+//@Accept json
+//@Produce json
+//@Param Authorization header string true "authorization" format("Bearer your_actual_token_here")
+//@Param message body entities.Addr true "Address details"
+//@Success 200  "Success"
+//@Router /api/users/addresses [post]
 func PostAddresses(c *gin.Context) {
 	var user entities.Users
 
@@ -59,6 +68,14 @@ func PostAddresses(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "address_added", "success": true, "body": gin.H{}})
 }
 
+//@Summary Get Address
+//@Description Post Addresses for users
+//@Tags Address
+//@Accept json
+//@Produce json
+//@Param Authorization header string true "authorization" format("Bearer your_actual_token_here")
+//@Success 200  "Success"
+//@Router /api/users/addresses [get]
 func GetAddresses(c *gin.Context) {
 	// Extract the username from the token claims
 	tokenClaims, exists := c.Get("tokenClaims")
@@ -95,6 +112,15 @@ func GetAddresses(c *gin.Context) {
 	// c.JSON(http.StatusNoContent, gin.H{})
 }
 
+//@Summary Delete Address by ID
+//@Description Delete a specific address for a user
+//@Tags Address
+//@Accept json
+//@Produce json
+//@param id path string true "Address ID" format("hex")
+//@Param Authorization header string true "authorization" format("Bearer your_actual_token_here")
+//@Success 200  "Success"
+//@Router  /api/users/addresses/{id} [delete]
 func DeleteAddressByID(c *gin.Context) {
 	// Extract the username from the token claims
 	tokenClaims, exists := c.Get("tokenClaims")

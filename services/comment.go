@@ -16,6 +16,16 @@ import (
 
 var commentCollection *mongo.Collection = database.GetCollection(database.DB, "comments")
 
+// @Summary Post Comment
+// @Description Post a comment for a product
+// @Tags comments
+// @Accept json
+// @Produce json
+// @Param productID path string true "Product ID" format("hex")
+// @Param Authorization header string true "authorization" format("Bearer your_actual_token_here")
+// @Param message body entities.Comments true "Comment details"
+// @Success 200 {object} entities.Comments "Success"
+// @Router /api/products/{productID}/comments [post]
 func PostComment(c *gin.Context) {
 	var message entities.Comments
 	tokenClaims, exists := c.Get("tokenClaims")
@@ -73,6 +83,17 @@ func PostComment(c *gin.Context) {
 	c.JSON(http.StatusNoContent, gin.H{})
 }
 
+// @Summary Get Comments for a Product
+// @Description Get comments for a specific product by slug
+// @Tags comments
+// @Accept json
+// @Produce json
+// @Param slug path string true "Product Slug"
+// @Success 200  {object} entities.Comments
+// @Failure 400
+// @Failure 401
+// @Failure 500
+// @Router /api/products/{slug}/comments [get]
 func GetComment(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

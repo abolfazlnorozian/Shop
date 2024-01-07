@@ -14,6 +14,13 @@ import (
 
 var brandCollection *mongo.Collection = database.GetCollection(database.DB, "brands")
 
+//@Summary Get Brands
+//@Description Get All Brands
+//@Tags brands
+//@Accept json
+//@produce json
+//@Success 201
+//@Router /api/brands [get]
 func GetBrands(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

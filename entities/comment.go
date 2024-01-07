@@ -19,3 +19,17 @@ type Comments struct {
 	UpdatedAt time.Time          `json:"updatedAt" bson:"updatedAt"`
 	V         int                `json:"__v" bson:"__v"`
 }
+
+type CommentRequest struct {
+	Id        primitive.ObjectID `json:"_id" binding:"required"`
+	BuyOffer  string             `json:"buyOffer" binding:"required"`
+	IsActive  bool               `json:"isActive" binding:"required"`
+	Title     string             `json:"title" binding:"required"`
+	Text      string             `json:"text" binding:"required"`
+	Rate      int                `json:"rate" binding:"required"`
+	ProductId primitive.ObjectID `json:"productId" binding:"required"`
+	UserId    primitive.ObjectID `json:"userId" binding:"required"`
+	CreatedAt time.Time          `json:"createdAt" binding:"required"`
+	UpdatedAt time.Time          `json:"updatedAt" binding:"required"`
+	V         int                `json:"__v" binding:"required"`
+}

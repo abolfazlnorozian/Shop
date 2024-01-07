@@ -15,6 +15,14 @@ import (
 
 var categoryCollection *mongo.Collection = database.GetCollection(database.DB, "categories")
 
+// ProRouter provides ...
+// @Summary Find All Categories
+// @Description Get all categories with hierarchical structure
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Success 201 {object} entities.Response
+// @Router /api/categories [get]
 func FindAllCategories(c *gin.Context) {
 
 	var categories []entities.Category

@@ -1,3 +1,10 @@
+// Package router provides ...
+// @title Shop API
+// @version 1.0
+// @description API for the Shop application
+// @host localhost:3006
+// @BasePath /api
+
 package router
 
 import (
@@ -15,9 +22,9 @@ func ProRouter(r *gin.RouterGroup) {
 	adminAuth := r.Group("/")
 
 	adminAuth.Use(auth.AdminAuthenticate())
-	//userAuth.Use(auth.UserAuthenticate())
 
 	adminAuth.POST("/addproduct", services.AddProduct())
+
 	pro.GET("/products/:slug", services.GetProductBySlug)
 
 	pro.GET("/products", services.GetProductsByFields)
@@ -26,16 +33,18 @@ func ProRouter(r *gin.RouterGroup) {
 
 }
 
+//userAuth.Use(auth.UserAuthenticate())
+
 func CategoryRouter(r *gin.RouterGroup) {
 	c := r.Group("/")
 	ca := r.Group("/")
 	ca.Use(auth.AdminAuthenticate())
-
 	c.GET("/categories", services.FindAllCategories)
 	ca.POST("/add", services.AddCategories)
 	c.GET("/categories/:slug", services.GetOneGategory)
 	c.GET("/categories/undefined", services.UndefindProduct)
 }
+
 func AdminRoutes(r *gin.RouterGroup) {
 	u := r.Group("/")
 	u.POST("/createdAdmin", services.RegisterAdmins)
@@ -123,6 +132,7 @@ func PageRoute(r *gin.RouterGroup) {
 	b := r.Group("/")
 	b.GET("/pages/index", services.GetPages)
 }
+
 func CommentRoute(r *gin.RouterGroup) {
 	com := r.Group("/")
 	c := r.Group("/")

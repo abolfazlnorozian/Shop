@@ -11,6 +11,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+//@Summary Post Favorite
+//@Description Post a Product as Favorite
+//@Tags Favorite
+//@Accept json
+//@Produce json
+//@Param Authorization header string true "authorization" format("Bearer your_actual_token_here")
+//@Param product body entities.FavoritesProducts true "Product object to be added as favorite"
+//@Success 200 "Success"
+//@Router /api/users/favorites [post]
 func AddProductToFavorite(c *gin.Context) {
 	tokenClaims, exists := c.Get("tokenClaims")
 	if !exists {
@@ -65,6 +74,14 @@ func AddProductToFavorite(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "favorite_product_added", "success": true, "body": gin.H{}})
 }
 
+//@Summary Get Favorite
+//@Description Get a Product from favorite field of user
+//@Tags Favorite
+//@Accept json
+//@Produce json
+//@Param Authorization header string true "authorization" format("Bearer your_actual_token_here")
+//@Success 200 "Success"
+//@Router /api/users/favorites [get]
 func GetFavorites(c *gin.Context) {
 	tokenClaims, exists := c.Get("tokenClaims")
 	if !exists {
@@ -113,6 +130,15 @@ func GetFavorites(c *gin.Context) {
 
 }
 
+//@Summary Delete Favorite
+//@Description Delete a Product from favorite field of user
+//@Tags Favorite
+//@Accept json
+//@Produce json
+//@Param productID path string true "Product ID to delete from favorites" format("hexadecimal ObjectId")
+//@Param Authorization header string true "authorization" format("Bearer your_actual_token_here")
+//@Success 200 "Success"
+//@Router /api/users/favorites/{productID} [delete]
 func DeleteFavorites(c *gin.Context) {
 	// Extract the product ID from the URL
 	productIDStr := c.Param("productID")

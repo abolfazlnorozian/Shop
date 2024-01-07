@@ -18,6 +18,16 @@ var cartCollection *mongo.Collection = database.GetCollection(database.DB, "cart
 var prodCollection *mongo.Collection = database.GetCollection(database.DB, "products")
 
 //var caCollection *mongo.Collection = database.GetCollection(database.DB, "brandschemas")
+
+//@Summary Post Cart
+//@Description Post a product to cart
+//@Tags Cart
+//@Accept json
+//@Produce json
+//@Param Authorization header string true "authorization" format("Bearer your_actual_token_here")
+//@Param message body response.Input true "Comment details"
+//@Success 201 "Success"
+//@Router /api/users/carts [post]
 func AddCatrs(c *gin.Context) {
 	var cart entities.Catrs
 
@@ -117,6 +127,14 @@ func AddCatrs(c *gin.Context) {
 	c.JSON(http.StatusNoContent, gin.H{})
 }
 
+//@Summary Get Cart
+//@Description Get a product From cart
+//@Tags Cart
+//@Accept json
+//@Produce json
+//@Param Authorization header string true "authorization" format("Bearer your_actual_token_here")
+//@Success 201 "Success"
+//@Router /api/users/carts [get]
 func GetCarts(c *gin.Context) {
 	var products []map[string]interface{} // Combined product structure
 
@@ -240,6 +258,15 @@ func GetCarts(c *gin.Context) {
 	// c.JSON(http.StatusNoContent, gin.H{})
 }
 
+//@Summary Get Cart
+//@Description Get a product From cart
+//@Tags Cart
+//@Accept json
+//@Produce json
+//@Param id query string true "ProductId"
+//@Param Authorization header string true "authorization" format("Bearer your_actual_token_here")
+//@Success 201 "Success"
+//@Router /api/users/carts [delete]
 func DeleteCart(c *gin.Context) {
 	// Parse the 'id' parameter from the URL
 	id := c.Query("id")

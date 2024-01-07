@@ -22,6 +22,16 @@ import (
 var usersCollection *mongo.Collection = database.GetCollection(database.DB, "users")
 var validates = validator.New()
 
+// @Summary Register User
+// @Description Register user by phoneNumber and send SMS verification code
+// @Tags login
+// @Accept json
+// @Produce json
+// @Param phone query string true "Phone number (must be at least 10 digits)"
+// @Success 200 {object} response.RegisterUsersResponse "Success"
+// @Failure 400 {object} response.ErrorResponse "Bad Request"
+// @Failure 500 {object} response.ErrorResponse "Internal Server Error"
+// @Router /api/users/auth/smsverification [get]
 func RegisterUsers(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -127,6 +137,18 @@ func RegisterUsers(c *gin.Context) {
 	}
 }
 
+// @Summary Login User
+// @Description Login user by Username and Password and get token for that user
+// @Tags login
+// @Accept json
+// @Produce json
+// @Param username body string true "Username"
+// @Param password body string true "Password"
+// @Success 200 {object} response.LoginResponse "Success"
+// @Failure 400 {object} response.ErrorResponse "Bad Request"
+// @Failure 500 {object} response.ErrorResponse "Internal Server Error"
+// @Router /api/users/auth/login [post]
+// @Consumes json
 func LoginUsers(c *gin.Context) {
 	var ctx, cancle = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancle()

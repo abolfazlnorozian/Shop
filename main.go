@@ -9,6 +9,10 @@ import (
 
 	"shop/router"
 
+	swaggerFiles "github.com/swaggo/files"
+
+	ginSwagger "github.com/swaggo/gin-swagger"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -21,14 +25,14 @@ func main() {
 	v2 := r.Group("/")
 	v2.Use(removeDoubleSlashesMiddleware)
 
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatalln("error loading .env file")
-	}
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8000"
-	}
+	// err := godotenv.Load(".env")
+	// if err != nil {
+	// 	log.Fatalln("error loading .env file")
+	// }
+	// port := os.Getenv("PORT")
+	// if port == "" {
+	// 	port = "8000"
+	// }
 
 	v1.Use(corsMiddleware())
 	v2.Use(corsMiddleware())
@@ -53,8 +57,28 @@ func main() {
 
 	}()
 
-	r.Run(":" + port)
+	// Middleware to conditionally handle /swagger/doc.json separately
+	r.Use(func(c *gin.Context) {
+		if c.Request.URL.Path == "/swagger/doc.json" {
+			// Handle /swagger/doc.json separately if needed
+			c.File("/home/abolfazl/src/shop/docs/swagger.json")
+			c.Abort()
+			return
+		}
+		c.Next()
+	})
 
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	r.Run(":" + getPort())
+
+}
+func getPort() string {
+	port := os.Getenv("PORT")
+	if port == "" {
+		return "8000"
+	}
+	return port
 }
 
 func corsMiddleware() gin.HandlerFunc {

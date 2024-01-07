@@ -36,6 +36,15 @@ type DimensionResponse struct {
 	ID     primitive.ObjectID    `json:"_id,omitempty" bson:"_id,omitempty"`
 }
 
+// ProRouter provides ...
+// @Summary Get products by slug
+// @Description Get products by slug
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param slug path string true "Product Slug"
+// @Success 200 {object} services.ProductWithCategories
+// @Router /api/products/{slug} [get]
 func GetProductBySlug(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -145,6 +154,22 @@ func fetchCategoryDetails(ctx context.Context, categoryIDs []primitive.ObjectID)
 }
 
 //*****************************************************************************
+// ProRouter provides ...
+// @Summary Get products based on various filters
+// @Description Get products based on category ID, category name, search query, amazing status, onlyExists status, or new status with optional pagination
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param categoryid query string false "Category ID"
+// @Param category query string false "Category Name"
+// @Param search query string false "Search query for fuzzy matching product names"
+// @Param amazing query string false "Filter by amazing products (true/false)"
+// @Param onlyexists query string false "Filter by only existing products (true/false)"
+// @Param new query string false "Filter by new products (1 for true, 0 for false)"
+// @Param page query integer false "Page number for pagination (default is 1)"
+// @Param limit query integer false "Number of items per page (default is 40)"
+// @Success 200 {object} response.GetProductByOneField
+// @Router /api/products [get]
 func GetProductsByFields(c *gin.Context) {
 	categoryId := c.DefaultQuery("categoryid", "")
 	categoryName := c.DefaultQuery("category", "")
@@ -320,6 +345,7 @@ func GetProductsByAmazing(c *gin.Context) {
 }
 
 //****************************************************************************************************
+
 func GetProductsByCategoryId(c *gin.Context) {
 
 	filter := bson.M{}
@@ -569,6 +595,17 @@ func GetProductsByOnlyExists(c *gin.Context) {
 }
 
 //***********************************************************************
+// ProRouter provides ...
+// @Summary Get products by category
+// @Description Get products by category with optional pagination
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param category query string false "categoryName or slug"
+// @Param page query integer false "Page number for pagination (default is 1)"
+// @Param limit query integer false "Number of items per page (default is 40)"
+// @Success 200 {object} response.GetProductByOneField
+// @Router /api/products/ [get]
 func GetProductByCategory(c *gin.Context) {
 	// Set a default filter to fetch all products
 	filter := bson.M{}
@@ -757,6 +794,15 @@ func UndefindProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "category", "body": nil})
 }
 
+// ProRouter provides ...
+// @Summary Get mix products
+// @Description Get mix products
+// @Tags products
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.MixProductsResponse
+// @Failure 500 {object} response.ErrorResponse "Internal Server Error"
+// @Router /api/mix-products [get]
 func MixProducts(c *gin.Context) {
 	var mixProducts []entities.MixProducts
 	cur, err := mixProductCollection.Find(c, bson.M{})
