@@ -9,12 +9,12 @@ import (
 
 	"shop/router"
 
+	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
 
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -33,9 +33,14 @@ func main() {
 	// if port == "" {
 	// 	port = "8000"
 	// }
-
+	r.Use(corsMiddleware())
 	v1.Use(corsMiddleware())
 	v2.Use(corsMiddleware())
+	// Configure CORS middleware
+	// corsConfig := cors.DefaultConfig()
+	// corsConfig.AllowOrigins = []string{os.Getenv("CORS_DOMAIN")}
+	// corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	// r.Use(cors.New(corsConfig))
 
 	router.ProRouter(v1)
 	router.CategoryRouter(v1)
@@ -80,6 +85,13 @@ func getPort() string {
 	}
 	return port
 }
+
+// func corsMiddleware() gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		// This middleware is no longer needed
+// 		c.Next()
+// 	}
+// }
 
 func corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {

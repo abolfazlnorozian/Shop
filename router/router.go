@@ -18,10 +18,11 @@ import (
 func ProRouter(r *gin.RouterGroup) {
 	pro := r.Group("/")
 
-	//userAuth := r.Group("/")
+	userAuth := r.Group("/")
 	adminAuth := r.Group("/")
 
 	adminAuth.Use(auth.AdminAuthenticate())
+	userAuth.Use(auth.UserAuthenticate)
 
 	adminAuth.POST("/addproduct", services.AddProduct())
 
@@ -29,7 +30,9 @@ func ProRouter(r *gin.RouterGroup) {
 
 	pro.GET("/products", services.GetProductsByFields)
 	pro.GET("/products/", services.GetProductByCategory)
-	pro.GET("/mix-products", services.MixProducts)
+	pro.GET("/mix-products", services.GetMixProducts)
+	userAuth.POST("/mix", services.PostMixesProduct)
+	userAuth.OPTIONS("/mix", services.PostMixesProduct)
 
 }
 
@@ -40,6 +43,7 @@ func CategoryRouter(r *gin.RouterGroup) {
 	ca := r.Group("/")
 	ca.Use(auth.AdminAuthenticate())
 	c.GET("/categories", services.FindAllCategories)
+	// c.OPTIONS("/categories", services.FindAllCategories)
 	ca.POST("/add", services.AddCategories)
 	c.GET("/categories/:slug", services.GetOneGategory)
 	c.GET("/categories/undefined", services.UndefindProduct)
@@ -78,8 +82,8 @@ func UserRoute(r *gin.RouterGroup) {
 	us.POST("/auth/login", services.LoginUsers)
 	us.OPTIONS("/auth/login", services.LoginUsers)
 	authAdmin.GET("/users2", services.GetAllUsers)
-	authUser.PUT("/users2/", services.UpdatedUser)
-	// authUser.OPTIONS("/users2/", services.UpdatedUser)
+	authUser.PUT("/users/", services.UpdatedUser)
+	authUser.OPTIONS("/users/", services.UpdatedUser)
 	authUser.GET("/users", services.GetUserByToken)
 	authUser.OPTIONS("/users", services.GetUserByToken)
 	authUser.POST("/users/addresses", services.PostAddresses)
@@ -92,7 +96,8 @@ func UserRoute(r *gin.RouterGroup) {
 func OrderRouter(r *gin.RouterGroup) {
 	or := r.Group("/")
 	ordr := r.Group("/users")
-	or.Use(auth.AdminAuthenticate())
+
+	// or.Use(auth.AdminAuthenticate())
 	ordr.Use(auth.UserAuthenticate)
 
 	ordr.GET("/orders", services.Findorders)
@@ -100,6 +105,10 @@ func OrderRouter(r *gin.RouterGroup) {
 	ordr.OPTIONS("/orders", services.AddOrder)
 	ordr.GET("/orders/:id", services.GetOrderByID)
 	ordr.OPTIONS("/orders/:id", services.GetOrderByID)
+	ordr.POST("/orders/checkout", services.SendToZarinpal)
+	ordr.OPTIONS("/orders/checkout", services.SendToZarinpal)
+	or.GET("/users/orders/checkout/verify", services.BackPayment)
+
 }
 func CartRouter(r *gin.RouterGroup) {
 	ca := r.Group("/users")

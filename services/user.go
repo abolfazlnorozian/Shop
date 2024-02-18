@@ -412,6 +412,8 @@ func GetUserByToken(c *gin.Context) {
 		"LastSendSmsVerificationTime": user.LastSendSms,
 		"lastname":                    user.LastName,
 		"name":                        user.Name,
+		"email":                       user.Email,
+		"birthDate":                   user.BirthDate,
 	}
 
 	c.JSON(http.StatusOK, jsonResponse)

@@ -46,13 +46,8 @@ func PostAddresses(c *gin.Context) {
 	}
 	addr.Id = primitive.NewObjectID()
 
-	// Find the user document in the database based on the username
 	filter := bson.M{"username": username}
-	err := usersCollection.FindOne(c, filter).Decode(&user)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
-		return
-	}
+	err := userCollection.FindOne(c, filter).Decode(&user)
 
 	// Append the Addr object to the addresses field of the user document
 	user.Address = append(user.Address, addr)

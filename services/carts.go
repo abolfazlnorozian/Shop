@@ -17,6 +17,8 @@ import (
 var cartCollection *mongo.Collection = database.GetCollection(database.DB, "carts")
 var prodCollection *mongo.Collection = database.GetCollection(database.DB, "products")
 
+// var propertiesCollection *mongo.Collection = database.GetCollection(database.DB, "properties")
+
 //var caCollection *mongo.Collection = database.GetCollection(database.DB, "brandschemas")
 
 //@Summary Post Cart
@@ -225,6 +227,54 @@ func GetCarts(c *gin.Context) {
 				"bannerUrl":       retrievedProduct.BannerUrl,
 				// Add more fields as needed
 			}
+			var variations []entities.Properties
+			cursor, err := propertiesCollection.Find(c, bson.M{"_id": bson.M{"$in": product.VariationsKey}})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			defer cursor.Close(c)
+
+			// Iterate through the cursor to decode each variation
+			for cursor.Next(c) {
+				var variation entities.Properties
+				if err := cursor.Decode(&variation); err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					return
+				}
+				variations = append(variations, variation)
+			}
+			if err := cursor.Err(); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			// var mixes entities.Mixes
+			// err = cartCollection.FindOne(c, bson.M{"productId": product.ProductId}).Decode(&mixes)
+			// if err != nil {
+			// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			// 	return
+			// }
+			// var mixProduct []entities.MixProducts
+			// cursor, err = mixProductCollection.Find(c, bson.M{"_id": bson.M{"$in": mixes.Products}})
+			// if err != nil {
+			// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			// 	return
+			// }
+			// defer cursor.Close(c)
+
+			// // Iterate through the cursor to decode each variation
+			// for cursor.Next(c) {
+			// 	var mixpro entities.MixProducts
+			// 	if err := cursor.Decode(&mixpro); err != nil {
+			// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			// 		return
+			// 	}
+			// 	mixProduct = append(mixProduct, mixpro)
+			// }
+			// if err := cursor.Err(); err != nil {
+			// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			// 	return
+			// }
 
 			// Append both simplified and detailed products to the products slice
 			products = append(products, map[string]interface{}{
@@ -232,8 +282,11 @@ func GetCarts(c *gin.Context) {
 				"quantity":      product.Quantity,
 				"variationsKey": product.VariationsKey,
 				"product":       detailedProduct,
-				"variations":    []interface{}{},
-				"mixproducts":   []interface{}{},
+				"variations":    variations,
+				// "variations":  []interface{}{},
+				"mixproducts": []interface{}{},
+				// "mixproducts": mixProduct,
+				// "mix":         mixes,
 			})
 		}
 	}

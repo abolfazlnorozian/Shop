@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"reflect"
 	"shop/auth"
 	"shop/database"
 	"shop/entities"
@@ -22,6 +23,7 @@ import (
 var proCollection *mongo.Collection = database.GetCollection(database.DB, "products")
 var propertiesCollection *mongo.Collection = database.GetCollection(database.DB, "properties")
 var mixProductCollection *mongo.Collection = database.GetCollection(database.DB, "mixproducts")
+var mixesCollection *mongo.Collection = database.GetCollection(database.DB, "mixes")
 
 type ProductWithCategories struct {
 	entities.Products
@@ -515,26 +517,46 @@ func GetProductsByOnlyExists(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to count products"})
 		return
 	}
-	// fmt.Println("totalDocts:", totalDocs)
-	// Fetch products based on the constructed filter
-	results, err := proCollection.Find(ctx, filter, options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)))
+	// results, err := proCollection.Find(ctx, filter, options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)))
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to query products"})
+	// 	return
+	// }
+
+	// defer results.Close(ctx)
+	// var products []entities.Products
+
+	// for results.Next(ctx) {
+	// 	var pro entities.Products
+	// 	err := results.Decode(&pro)
+	// 	if err != nil {
+	// 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+	// 		return
+	// 	}
+
+	// 	products = append(products, pro)
+	// }
+
+	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}, {Key: "updatedAt", Value: -1}}).SetLimit(50)
+	cursor, err := proCollection.Find(ctx, bson.M{}, opts)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to query products"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to count products"})
 		return
 	}
+	defer cursor.Close(ctx)
 
-	defer results.Close(ctx)
 	var products []entities.Products
-
-	for results.Next(ctx) {
-		var pro entities.Products
-		err := results.Decode(&pro)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+	for cursor.Next(ctx) {
+		var product entities.Products
+		if err := cursor.Decode(&product); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to count products"})
 			return
 		}
-
-		products = append(products, pro)
+		products = append(products, product)
+	}
+	if err := cursor.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to count products"})
+		return
 	}
 
 	// Calculate total number of pages based on the limit
@@ -803,7 +825,7 @@ func UndefindProduct(c *gin.Context) {
 // @Success 200 {object} response.MixProductsResponse
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
 // @Router /api/mix-products [get]
-func MixProducts(c *gin.Context) {
+func GetMixProducts(c *gin.Context) {
 	var mixProducts []entities.MixProducts
 	cur, err := mixProductCollection.Find(c, bson.M{})
 	if err != nil {
@@ -823,6 +845,104 @@ func MixProducts(c *gin.Context) {
 
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "mix_products", "body": mixProducts})
+
+}
+func PostMixesProduct(c *gin.Context) {
+	var mix entities.Mixes
+
+	tokenClaims, exists := c.Get("tokenClaims")
+
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+		return
+	}
+
+	claims, ok := tokenClaims.(*auth.SignedUserDetails)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+		return
+	}
+
+	userId := claims.Id
+	username := claims.Username
+	if err := c.ShouldBindJSON(&mix); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	mix.ID = primitive.NewObjectID()
+	mix.UserId = userId
+	mix.CreatedAt = time.Now()
+	mix.UpdatedAt = time.Now()
+	_, err := mixesCollection.InsertOne(c, mix)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	var cart entities.Catrs
+	cart.Id = primitive.NewObjectID()
+	cart.Status = "active"
+	cart.UserName = username
+
+	cart.CreatedAt = time.Now()
+	cart.UpdatedAt = time.Now()
+
+	// Create a ComeProduct based on the input JSON
+	product := entities.ComeProduct{
+		Quantity:  1,
+		ProductId: mix.ID,
+		Id:        primitive.NewObjectID(),
+	}
+
+	cart.Products = []entities.ComeProduct{product}
+
+	filter := bson.M{"username": username}
+	var existingDoc entities.Catrs
+	err = cartCollection.FindOne(c, filter).Decode(&existingDoc)
+	if err == nil {
+
+		existingProductIndex := -1
+		for i, product := range existingDoc.Products {
+			if product.ProductId == cart.Products[0].ProductId && reflect.DeepEqual(product.VariationsKey, cart.Products[0].VariationsKey) {
+				existingProductIndex = i
+				break
+			}
+		}
+
+		if existingProductIndex != -1 {
+			// If productId already exists, update the quantity
+			existingDoc.Products[existingProductIndex].Quantity = product.Quantity
+
+			// If the quantity becomes zero, remove the product from the cart
+			if product.Quantity == 0 {
+				existingDoc.Products = append(existingDoc.Products[:existingProductIndex], existingDoc.Products[existingProductIndex+1:]...)
+			}
+		} else {
+			// If productId doesn't exist, add the new product to the Products array
+			existingDoc.Products = append(existingDoc.Products, cart.Products[0])
+		}
+
+		// Update the existing document in the database
+		update := bson.M{"$set": bson.M{
+			"products":  existingDoc.Products,
+			"updatedAt": time.Now(),
+		}}
+		_, err = cartCollection.UpdateOne(c, filter, update)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"success": true, "message": "mix"})
+	}
+
+	// Insert the new document into the database
+	_, err = cartCollection.InsertOne(c, cart)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "mix"})
+	c.JSON(http.StatusNoContent, gin.H{})
 
 }
 

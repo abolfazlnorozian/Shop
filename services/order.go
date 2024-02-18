@@ -2,15 +2,20 @@ package services
 
 import (
 	"context"
+	"log"
 	"net/http"
+	"os"
 	"reflect"
 	"shop/auth"
 	"shop/database"
 	"shop/entities"
+	"shop/helpers/zarinpal"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -154,7 +159,7 @@ func AddOrder(c *gin.Context) {
 	order.Massage = ""
 
 	order.TotalDiscount = 0
-	order.PostalCost = 30000
+	order.PostalCost = 40000
 	// op := order.PostalCost
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
@@ -292,4 +297,103 @@ func GetOrderByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "order", "body": order})
+}
+
+func SendToZarinpal(c *gin.Context) {
+	var orderData entities.Order
+
+	if err := c.ShouldBindJSON(&orderData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid order data"})
+		return
+	}
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatalln("error loading .env file")
+	}
+	merchantid := os.Getenv("ZARINPAL_MERCHANT_ID")
+
+	merchantID := merchantid                                                // Replace with your ZarinPal Merchant ID
+	callbackURL := "http://localhost:3006/api/users/orders/checkout/verify" // Replace with your callback URL
+	amount := orderData.TotalPrice                                          // Example amount, replace with actual amount
+	description := "Payment for order ID"                                   // Example description, replace with actual description
+
+	request := zarinpal.NewRequest(merchantID, callbackURL, uint(amount), description)
+
+	requestResponse, err := request.Exec()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if requestResponse.Status == 100 {
+		_, err := ordersCollection.UpdateOne(c,
+			bson.M{"_id": orderData.Id},
+			bson.M{"$set": bson.M{"paymentId": requestResponse.Authority}},
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		redirectURL := "https://www.zarinpal.com/pg/StartPay/" + requestResponse.Authority
+		c.Redirect(http.StatusFound, redirectURL)
+		return
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Payment request failed"})
+		return
+	}
+
+}
+
+func BackPayment(c *gin.Context) {
+	var orderData entities.Order
+	authority := c.Query("Authority")
+	err := ordersCollection.FindOne(c, bson.M{"paymentId": authority}).Decode(&orderData)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
+		return
+	}
+	err = godotenv.Load(".env")
+	if err != nil {
+		log.Fatalln("error loading .env file")
+	}
+	merchantid := os.Getenv("ZARINPAL_MERCHANT_ID")
+
+	merchantID := merchantid
+
+	amount := orderData.TotalPrice
+
+	verify := zarinpal.NewVerify(merchantID, authority, uint(amount))
+	verifyResponse, err := verify.Exec()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if verifyResponse.Status == 100 || verifyResponse.Status == 101 {
+
+		_, err := ordersCollection.UpdateOne(c,
+			bson.M{"paymentId": authority},
+			bson.M{"$set": bson.M{"paymentStatus": "paid"}},
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "success"})
+	} else {
+
+		_, err := ordersCollection.UpdateOne(c,
+			bson.M{"paymentId": authority},
+			bson.M{"$set": bson.M{"paymentStatus": "unpaid"}},
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "failure"})
+	}
 }
