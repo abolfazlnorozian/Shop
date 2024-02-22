@@ -12,7 +12,7 @@ type Order struct {
 	StartDate         time.Time          `json:"startDate" bson:"startDate"`
 	Status            string             `json:"status" bson:"status"`
 	PaymentStatus     string             `json:"paymentStatus" bson:"paymentStatus"`
-	Massage           string             `json:"message" bson:"message"`
+	Message           string             `json:"message" bson:"message"`
 	TotalPrice        int                `json:"totalPrice" bson:"totalPrice"`
 	TotalDiscount     float64            `json:"totalDiscount" bson:"totalDiscount"`
 	AmountCoupon      int                `json:"amountCoupon" bson:"amountCoupon"`
@@ -23,6 +23,7 @@ type Order struct {
 	Products          []Product          `json:"products" bson:"products"`
 	JStartDate        string             `json:"jStartDate" bson:"jSatrtDate"`
 	Address           Addrs              `json:"address" bson:"address" binding:"required"`
+	Mix               primitive.ObjectID `json:"mix,omitempty" bson:"mix,omitempty"`
 	CreatedAt         time.Time          `json:"createdAt" bson:"createdAt"`
 	UpdatedAt         time.Time          `json:"updatedAt" bson:"updatedAt"`
 	V                 int                `json:"__v" bson:"__v"`

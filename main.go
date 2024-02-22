@@ -33,7 +33,7 @@ func main() {
 	// if port == "" {
 	// 	port = "8000"
 	// }
-	r.Use(corsMiddleware())
+	// r.Use(corsMiddleware())
 	v1.Use(corsMiddleware())
 	v2.Use(corsMiddleware())
 	// Configure CORS middleware

@@ -94,6 +94,7 @@ func Findorders(c *gin.Context) {
 func AddOrder(c *gin.Context) {
 	var order entities.Order
 
+	// Retrieving token claims from context
 	tokenClaims, exists := c.Get("tokenClaims")
 	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
@@ -109,15 +110,16 @@ func AddOrder(c *gin.Context) {
 	username := claims.Username
 	id := claims.Id
 
+	// Fetching user's address from the database
 	var users entities.Users
 	err := usersCollection.FindOne(c, bson.M{"username": username}).Decode(&users)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"errorAddress": err.Error()})
 		return
 	}
-	for _, user := range users.Address {
-		// objectID := user.Id
 
+	// Assigning user's address to order
+	for _, user := range users.Address {
 		order.Address = entities.Addrs{
 			Id:         user.Id,
 			Address:    user.Address,
@@ -125,9 +127,9 @@ func AddOrder(c *gin.Context) {
 			PostalCode: user.PostalCode,
 			State:      user.State,
 		}
-
 	}
 
+	// Incrementing order ID from counter collection
 	counter := struct {
 		Count int `bson:"count"`
 	}{}
@@ -149,92 +151,265 @@ func AddOrder(c *gin.Context) {
 	}
 
 	order.Id = counter.Count
-
 	order.StartDate = time.Now()
 	order.Status = "none"
 	order.PaymentStatus = "unpaid"
 	order.PaymentId = ""
 	order.UserId = id
 	order.IsCoupon = false
-	order.Massage = ""
-
+	order.Message = ""
 	order.TotalDiscount = 0
 	order.PostalCost = 40000
-	// op := order.PostalCost
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
 	order.V = 0
 
+	// Fetching user's cart from the database
 	var cart entities.Catrs
 	err = cartCollection.FindOne(c, bson.M{"username": username}).Decode(&cart)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "not found this user in cart"})
 		return
-
 	}
 
-	for _, product := range cart.Products {
+	order.Mix = cart.Mix
 
-		productID := product.ProductId
-		variationKey := product.VariationsKey
-		productQuantity := product.Quantity
-		// fmt.Println("productId:", productID)
+	// Calculating total price for mix products
+	// var totalPrice int // Assuming totalPrice is an integer
 
-		var retrievedProduct entities.Products
-		// err := produCollection.FindOne(c, bson.M{"_id": productID, "variations": bson.M{"$elemMatch": bson.M{"keys": variationKey}}}).Decode(&retrievedProduct)
-		err := proCollection.FindOne(c, bson.M{"_id": productID}).Decode(&retrievedProduct)
+	// If cart has mix, calculate total price from mix products
+	if cart.Mix.IsZero() {
+		for _, product := range cart.Products {
+
+			productID := product.ProductId
+			variationKey := product.VariationsKey
+			productQuantity := product.Quantity
+			// fmt.Println("productId:", productID)
+
+			var retrievedProduct entities.Products
+			// err := produCollection.FindOne(c, bson.M{"_id": productID, "variations": bson.M{"$elemMatch": bson.M{"keys": variationKey}}}).Decode(&retrievedProduct)
+			err := proCollection.FindOne(c, bson.M{"_id": productID}).Decode(&retrievedProduct)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"errorProduct": err.Error()})
+				return
+			}
+
+			if retrievedProduct.ID.IsZero() {
+				continue
+			}
+
+			var selectedVariation entities.Variation
+			for _, variation := range retrievedProduct.Variations {
+				if reflect.DeepEqual(variation.Keys, variationKey) {
+					selectedVariation = variation
+					break
+				}
+			}
+
+			orderProduct := entities.Product{
+				Quantity:        productQuantity,
+				Id:              retrievedProduct.ID,
+				Name:            retrievedProduct.Name,
+				Price:           retrievedProduct.Price,
+				VariationKey:    selectedVariation.Keys,
+				ProductId:       product.ProductId,
+				DiscountPercent: float64(retrievedProduct.DiscountPercent),
+			}
+
+			discount := orderProduct.Price * int(orderProduct.DiscountPercent) / 100
+
+			p := orderProduct.Price*productQuantity - (discount * productQuantity)
+			// Tp := p + op
+			order.Products = append(order.Products, orderProduct)
+			order.TotalQuantity += productQuantity
+			order.TotalPrice += p + order.PostalCost
+			order.TotalDiscount += float64(discount * productQuantity)
+
+		}
+	} else if len(cart.Products) == 0 {
+		// If cart has mix but no individual products, calculate total price from mix products
+		var mix entities.Mixes
+		err := mixesCollection.FindOne(c, bson.M{"_id": order.Mix}).Decode(&mix)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"errorProduct": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "mix not found"})
 			return
 		}
 
-		if retrievedProduct.ID.IsZero() {
-			continue
+		// Fetch mix products details
+		cur, err := mixProductCollection.Find(c, bson.M{"_id": bson.M{"$in": mix.Products}})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "not found mixproduct"})
+			return
 		}
 
-		var selectedVariation entities.Variation
-		for _, variation := range retrievedProduct.Variations {
-			if reflect.DeepEqual(variation.Keys, variationKey) {
-				selectedVariation = variation
-				break
+		defer cur.Close(c)
+		var totalPrice int
+		index := 0
+		// Iterate through mix products to calculate subtotal for each
+		for cur.Next(c) {
+			var mixProduct entities.MixProducts
+			if err := cur.Decode(&mixProduct); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
 			}
+
+			// Ensure that the index does not exceed the length of the balance array
+			if index >= len(mix.Balance) {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "index out of range"})
+				return
+			}
+			subtotal := 0
+			mixBalance := mix.Balance[index] * mix.Weight
+			mixDevide := float64(mixBalance) / 10000
+			money := mixDevide * float64(mixProduct.Price)
+			subtotal += int(money)
+			// Calculate subtotal for the mix product using the correct index
+			// subtotal := (mix.Balance[index] * mix.Weight) / 10000 * mixProduct.Price
+			totalPrice += subtotal
+
+			// Increment the index for the next mix product
+			index++
 		}
 
-		orderProduct := entities.Product{
-			Quantity:        productQuantity,
-			Id:              retrievedProduct.ID,
-			Name:            retrievedProduct.Name,
-			Price:           retrievedProduct.Price,
-			VariationKey:    selectedVariation.Keys,
-			ProductId:       product.ProductId,
-			DiscountPercent: float64(retrievedProduct.DiscountPercent),
+		if err := cur.Err(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if order.Products == nil {
+			order.Products = make([]entities.Product, 0)
 		}
 
-		discount := orderProduct.Price * int(orderProduct.DiscountPercent) / 100
+		// Assign total price to order
+		order.TotalPrice = totalPrice + order.PostalCost
+	} else if len(cart.Products) > 0 && !cart.Mix.IsZero() {
+		var tp []int
+		var tm int
+		for _, product := range cart.Products {
 
-		p := orderProduct.Price*productQuantity - (discount * productQuantity)
-		// Tp := p + op
-		order.Products = append(order.Products, orderProduct)
-		order.TotalQuantity += productQuantity
-		order.TotalPrice += p
-		order.TotalDiscount += float64(discount * productQuantity)
+			productID := product.ProductId
+			variationKey := product.VariationsKey
+			productQuantity := product.Quantity
+			// fmt.Println("productId:", productID)
+
+			var retrievedProduct entities.Products
+			// err := produCollection.FindOne(c, bson.M{"_id": productID, "variations": bson.M{"$elemMatch": bson.M{"keys": variationKey}}}).Decode(&retrievedProduct)
+			err := proCollection.FindOne(c, bson.M{"_id": productID}).Decode(&retrievedProduct)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"errorProduct": err.Error()})
+				return
+			}
+
+			if retrievedProduct.ID.IsZero() {
+				continue
+			}
+
+			var selectedVariation entities.Variation
+			for _, variation := range retrievedProduct.Variations {
+				if reflect.DeepEqual(variation.Keys, variationKey) {
+					selectedVariation = variation
+					break
+				}
+			}
+
+			orderProduct := entities.Product{
+				Quantity:        productQuantity,
+				Id:              retrievedProduct.ID,
+				Name:            retrievedProduct.Name,
+				Price:           retrievedProduct.Price,
+				VariationKey:    selectedVariation.Keys,
+				ProductId:       product.ProductId,
+				DiscountPercent: float64(retrievedProduct.DiscountPercent),
+			}
+
+			discount := orderProduct.Price * int(orderProduct.DiscountPercent) / 100
+
+			p := orderProduct.Price*productQuantity - (discount * productQuantity)
+			// Tp := p
+			tp = append(tp, p)
+			order.Products = append(order.Products, orderProduct)
+			order.TotalQuantity += productQuantity
+			// order.TotalPrice += p
+			order.TotalDiscount += float64(discount * productQuantity)
+		}
+		// If cart has mix but no individual products, calculate total price from mix products
+		var mix entities.Mixes
+		err := mixesCollection.FindOne(c, bson.M{"_id": order.Mix}).Decode(&mix)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "mix not found"})
+			return
+		}
+
+		// Fetch mix products details
+		cur, err := mixProductCollection.Find(c, bson.M{"_id": bson.M{"$in": mix.Products}})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "not found mixproduct"})
+			return
+		}
+
+		defer cur.Close(c)
+		var totalPrice int
+		index := 0
+		// Iterate through mix products to calculate subtotal for each
+		for cur.Next(c) {
+			var mixProduct entities.MixProducts
+			if err := cur.Decode(&mixProduct); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
+			// Ensure that the index does not exceed the length of the balance array
+			if index >= len(mix.Balance) {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "index out of range"})
+				return
+			}
+			subtotal := 0
+			mixBalance := mix.Balance[index] * mix.Weight
+			mixDevide := float64(mixBalance) / 10000
+			money := mixDevide * float64(mixProduct.Price)
+			subtotal += int(money)
+			// Calculate subtotal for the mix product using the correct index
+			// subtotal := (mix.Balance[index] * mix.Weight) / 10000 * mixProduct.Price
+			totalPrice += subtotal
+
+			// Increment the index for the next mix product
+			index++
+		}
+
+		if err := cur.Err(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if order.Products == nil {
+			order.Products = make([]entities.Product, 0)
+		}
+		tm = totalPrice
+		// Assign total price to order
+		order.TotalPrice = tm + tp[0] + order.PostalCost
 
 	}
 
+	// order.TotalPrice = totalPrice
+	// Initialize Products field if nil
+
+	// Delete cart after order creation
 	_, err = cartCollection.DeleteOne(c, bson.M{"username": username})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove cart"})
 		return
 	}
 
+	// Insert order into the database
 	_, err = ordersCollection.InsertOne(c, order)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Respond with success message and order ID
 	c.JSON(http.StatusOK, gin.H{"message": "order_added", "success": true, "body": gin.H{"orderId": order.Id}})
 }
+
+//***************************************************************************
 
 //@Summary GET Order
 //@Description Get Order by OrderId
@@ -275,28 +450,173 @@ func GetOrderByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"messageOrder": err.Error()})
 		return
 	}
-	order := entities.Order{
-		Id:            orders.Id,
-		IsCoupon:      orders.IsCoupon,
-		StartDate:     orders.StartDate,
-		Status:        orders.Status,
-		PaymentStatus: orders.PaymentStatus,
-		Massage:       orders.Massage,
-		TotalPrice:    orders.TotalPrice,
-		TotalDiscount: orders.TotalDiscount,
-		TotalQuantity: orders.TotalQuantity,
-		PostalCost:    orders.PostalCost,
-		UserId:        orders.UserId,
-		Products:      orders.Products,
-		JStartDate:    orders.JStartDate,
-		Address:       orders.Address,
-		CreatedAt:     orders.CreatedAt,
-		UpdatedAt:     orders.UpdatedAt,
-		V:             orders.V,
-		PaymentId:     orders.PaymentId,
-	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "order", "body": order})
+	// // Check if the order has a mix
+	if len(orders.Products) == 0 {
+		// Fetch the mix details
+		var mix entities.Mixes
+		err = mixesCollection.FindOne(c, bson.M{"_id": orders.Mix}).Decode(&mix)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"messageOrder": "mix not found"})
+			return
+		}
+
+		// Fetch the mix products details
+		var mixProducts []entities.MixProducts
+		cur, err := mixProductCollection.Find(c, bson.M{"_id": bson.M{"$in": mix.Products}})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "not found mixproduct"})
+			return
+		}
+
+		defer cur.Close(c)
+
+		// Iterate through the cursor to decode each variation
+		for cur.Next(c) {
+			var mixProduct entities.MixProducts
+			if err := cur.Decode(&mixProduct); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
+			mixProducts = append(mixProducts, mixProduct)
+		}
+		if err := cur.Err(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Construct the response body including mix and mix products
+		responseBody := gin.H{
+			"isCoupon":      orders.IsCoupon,
+			"startDate":     orders.StartDate,
+			"status":        orders.Status,
+			"paymentStatus": orders.PaymentStatus,
+			"message":       orders.Message,
+			"_id":           orders.Id,
+			"totalPrice":    orders.TotalPrice,
+			"totalDiscount": orders.TotalDiscount,
+			"totalQuantity": orders.TotalQuantity,
+			"postalCost":    orders.PostalCost,
+			"userId":        orders.UserId,
+			"products":      orders.Products,
+			"jStartDate":    orders.JStartDate,
+			"address":       orders.Address,
+			"mix": gin.H{
+				"products":  mixProducts,
+				"_id":       mix.ID,
+				"name":      mix.Name,
+				"weight":    mix.Weight,
+				"pattern":   mix.Pattern,
+				"userId":    mix.UserId,
+				"createdAt": mix.CreatedAt,
+				"updatedAt": mix.UpdatedAt,
+				"__v":       mix.V,
+				"balance":   mix.Balance,
+			},
+			"createdAt": orders.CreatedAt,
+			"updatedAt": orders.UpdatedAt,
+			"__v":       orders.V,
+		}
+
+		// Send the response
+		c.JSON(http.StatusOK, gin.H{"success": true, "message": "order", "body": responseBody})
+	} else if orders.Mix.IsZero() {
+		// If the order doesn't have a mix, handle it as usual
+		// Construct the response body without mix details
+		responseBody := gin.H{
+			"isCoupon":      orders.IsCoupon,
+			"startDate":     orders.StartDate,
+			"status":        orders.Status,
+			"paymentStatus": orders.PaymentStatus,
+			"message":       orders.Message,
+			"_id":           orders.Id,
+			"totalPrice":    orders.TotalPrice,
+			"totalDiscount": orders.TotalDiscount,
+			"totalQuantity": orders.TotalQuantity,
+			"postalCost":    orders.PostalCost,
+			"userId":        orders.UserId,
+			"products":      orders.Products,
+			"jStartDate":    orders.JStartDate,
+			"address":       orders.Address,
+			"createdAt":     orders.CreatedAt,
+			"updatedAt":     orders.UpdatedAt,
+			"__v":           orders.V,
+		}
+
+		// Send the response
+		c.JSON(http.StatusOK, gin.H{"success": true, "message": "order", "body": responseBody})
+	} else if len(orders.Products) > 0 && !orders.Mix.IsZero() {
+		// Fetch the mix details
+		var mix entities.Mixes
+		err = mixesCollection.FindOne(c, bson.M{"_id": orders.Mix}).Decode(&mix)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"messageOrder": "mix not found"})
+			return
+		}
+
+		// Fetch the mix products details
+		var mixProducts []entities.MixProducts
+		cur, err := mixProductCollection.Find(c, bson.M{"_id": bson.M{"$in": mix.Products}})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "not found mixproduct"})
+			return
+		}
+
+		defer cur.Close(c)
+
+		// Iterate through the cursor to decode each variation
+		for cur.Next(c) {
+			var mixProduct entities.MixProducts
+			if err := cur.Decode(&mixProduct); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
+			mixProducts = append(mixProducts, mixProduct)
+		}
+		if err := cur.Err(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Construct the response body including mix and mix products
+		responseBody := gin.H{
+			"isCoupon":      orders.IsCoupon,
+			"startDate":     orders.StartDate,
+			"status":        orders.Status,
+			"paymentStatus": orders.PaymentStatus,
+			"message":       orders.Message,
+			"_id":           orders.Id,
+			"totalPrice":    orders.TotalPrice,
+			"totalDiscount": orders.TotalDiscount,
+			"totalQuantity": orders.TotalQuantity,
+			"postalCost":    orders.PostalCost,
+			"userId":        orders.UserId,
+			"products":      orders.Products,
+			"jStartDate":    orders.JStartDate,
+			"address":       orders.Address,
+			"mix": gin.H{
+				"products":  mixProducts,
+				"_id":       mix.ID,
+				"name":      mix.Name,
+				"weight":    mix.Weight,
+				"pattern":   mix.Pattern,
+				"userId":    mix.UserId,
+				"createdAt": mix.CreatedAt,
+				"updatedAt": mix.UpdatedAt,
+				"__v":       mix.V,
+				"balance":   mix.Balance,
+			},
+			"createdAt": orders.CreatedAt,
+			"updatedAt": orders.UpdatedAt,
+			"__v":       orders.V,
+		}
+
+		// Send the response
+		c.JSON(http.StatusOK, gin.H{"success": true, "message": "order", "body": responseBody})
+
+	}
 }
 
 func SendToZarinpal(c *gin.Context) {
@@ -397,3 +717,184 @@ func BackPayment(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "failure"})
 	}
 }
+
+// func AddOrder(c *gin.Context) {
+// 	var order entities.Order
+
+// 	tokenClaims, exists := c.Get("tokenClaims")
+// 	if !exists {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+// 		return
+// 	}
+
+// 	claims, ok := tokenClaims.(*auth.SignedUserDetails)
+// 	if !ok {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+// 		return
+// 	}
+
+// 	username := claims.Username
+// 	id := claims.Id
+
+// 	var users entities.Users
+// 	err := usersCollection.FindOne(c, bson.M{"username": username}).Decode(&users)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"errorAddress": err.Error()})
+// 		return
+// 	}
+// 	for _, user := range users.Address {
+// 		// objectID := user.Id
+
+// 		order.Address = entities.Addrs{
+// 			Id:         user.Id,
+// 			Address:    user.Address,
+// 			City:       user.City,
+// 			PostalCode: user.PostalCode,
+// 			State:      user.State,
+// 		}
+
+// 	}
+
+// 	counter := struct {
+// 		Count int `bson:"count"`
+// 	}{}
+// 	oid, err := primitive.ObjectIDFromHex("603e7dcc0e4e3d00128812cc")
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"errorCounter": err.Error()})
+// 		return
+// 	}
+
+// 	err = countersCollection.FindOneAndUpdate(
+// 		c,
+// 		bson.M{"_id": oid},
+// 		bson.M{"$inc": bson.M{"count": 1}},
+// 		options.FindOneAndUpdate().SetReturnDocument(options.After),
+// 	).Decode(&counter)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"errorCounter": err.Error()})
+// 		return
+// 	}
+
+// 	order.Id = counter.Count
+
+// 	order.StartDate = time.Now()
+// 	order.Status = "none"
+// 	order.PaymentStatus = "unpaid"
+// 	order.PaymentId = ""
+// 	order.UserId = id
+// 	order.IsCoupon = false
+// 	order.Message = ""
+
+// 	order.TotalDiscount = 0
+// 	order.PostalCost = 40000
+// 	// op := order.PostalCost
+// 	order.CreatedAt = time.Now()
+// 	order.UpdatedAt = time.Now()
+// 	order.V = 0
+
+// 	var cart entities.Catrs
+// 	err = cartCollection.FindOne(c, bson.M{"username": username}).Decode(&cart)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"message": "not found this user in cart"})
+// 		return
+
+// 	}
+// 	order.Mix = cart.Mix
+// 	var totalPrice int
+// 	if cart.Mix.IsZero() {
+// 		for _, product := range cart.Products {
+
+// 			productID := product.ProductId
+// 			variationKey := product.VariationsKey
+// 			productQuantity := product.Quantity
+// 			// fmt.Println("productId:", productID)
+
+// 			var retrievedProduct entities.Products
+// 			// err := produCollection.FindOne(c, bson.M{"_id": productID, "variations": bson.M{"$elemMatch": bson.M{"keys": variationKey}}}).Decode(&retrievedProduct)
+// 			err := proCollection.FindOne(c, bson.M{"_id": productID}).Decode(&retrievedProduct)
+// 			if err != nil {
+// 				c.JSON(http.StatusInternalServerError, gin.H{"errorProduct": err.Error()})
+// 				return
+// 			}
+
+// 			if retrievedProduct.ID.IsZero() {
+// 				continue
+// 			}
+
+// 			var selectedVariation entities.Variation
+// 			for _, variation := range retrievedProduct.Variations {
+// 				if reflect.DeepEqual(variation.Keys, variationKey) {
+// 					selectedVariation = variation
+// 					break
+// 				}
+// 			}
+
+// 			orderProduct := entities.Product{
+// 				Quantity:        productQuantity,
+// 				Id:              retrievedProduct.ID,
+// 				Name:            retrievedProduct.Name,
+// 				Price:           retrievedProduct.Price,
+// 				VariationKey:    selectedVariation.Keys,
+// 				ProductId:       product.ProductId,
+// 				DiscountPercent: float64(retrievedProduct.DiscountPercent),
+// 			}
+
+// 			discount := orderProduct.Price * int(orderProduct.DiscountPercent) / 100
+
+// 			p := orderProduct.Price*productQuantity - (discount * productQuantity)
+// 			// Tp := p + op
+// 			order.Products = append(order.Products, orderProduct)
+// 			order.TotalQuantity += productQuantity
+// 			order.TotalPrice += p
+// 			order.TotalDiscount += float64(discount * productQuantity)
+
+// 		}
+
+// 		_, err = cartCollection.DeleteOne(c, bson.M{"username": username})
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove cart"})
+// 			return
+// 		}
+
+// 		_, err = ordersCollection.InsertOne(c, order)
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 			return
+// 		}
+
+// 	} else if len(cart.Products) == 0 {
+// 		var mix entities.Mixes
+// 		err := mixesCollection.FindOne(c, bson.M{"_id": order.Mix}).Decode(mix)
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": "mix not found"})
+// 			return
+// 		}
+// 		// Fetch the mix products details
+// 		var mixProducts []entities.MixProducts
+// 		cur, err := mixProductCollection.Find(c, bson.M{"_id": bson.M{"$in": mix.Products}})
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": "not found mixproduct"})
+// 			return
+// 		}
+
+// 		defer cur.Close(c)
+
+// 		// Iterate through the cursor to decode each variation
+// 		for cur.Next(c) {
+// 			var mixProduct entities.MixProducts
+// 			if err := cur.Decode(&mixProduct); err != nil {
+// 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 				return
+// 			}
+
+// 			mixProducts = append(mixProducts, mixProduct)
+// 		}
+// 		if err := cur.Err(); err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 			return
+// 		}
+
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{"message": "order_added", "success": true, "body": gin.H{"orderId": order.Id}})
+// }

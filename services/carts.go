@@ -169,7 +169,7 @@ func GetCarts(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode cart", "details": err.Error()})
 			return
 		}
-		if len(cart.Products) == 0 {
+		if len(cart.Products) == 0 && cart.Mix.IsZero() {
 			// Cart is empty, return empty cart response
 			c.JSON(http.StatusCreated, gin.H{
 				"success": true,
@@ -185,110 +185,230 @@ func GetCarts(c *gin.Context) {
 		}
 
 		cartNotFound = false
+		if cart.Mix.IsZero() {
+			for _, product := range cart.Products {
+				// Fetch detailed product information from your data source (e.g., database)
+				var retrievedProduct entities.Products
+				err := prodCollection.FindOne(c, bson.M{"_id": product.ProductId}).Decode(&retrievedProduct)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch product", "details": err.Error()})
+					return
+				}
 
-		for _, product := range cart.Products {
-
-			// Fetch detailed product information from your data source (e.g., database)
-			var retrievedProduct entities.Products
-			err := prodCollection.FindOne(c, bson.M{"_id": product.ProductId}).Decode(&retrievedProduct)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch product", "details": err.Error()})
-				return
-			}
-
-			// Create a detailed product structure
-			detailedProduct := map[string]interface{}{
-				"_id":             retrievedProduct.ID.Hex(),
-				"name":            retrievedProduct.Name,
-				"price":           retrievedProduct.Price,
-				"notExist":        retrievedProduct.NotExist,
-				"amazing":         retrievedProduct.Amazing,
-				"productType":     retrievedProduct.ProductType,
-				"quantity":        retrievedProduct.Quantity,
-				"comments":        retrievedProduct.Comment,
-				"parent":          retrievedProduct.Parent,
-				"categories":      retrievedProduct.Category,
-				"tags":            retrievedProduct.Tags,
-				"similarProducts": retrievedProduct.SimilarProducts,
-				"name_fuzzy":      retrievedProduct.NameFuzzy,
-				"images":          retrievedProduct.Images,
-				"details":         retrievedProduct.Details,
-				"discountPercent": retrievedProduct.DiscountPercent,
-				"stock":           retrievedProduct.Stock,
-				"categoryId":      retrievedProduct.CategoryID,
-				"attributes":      retrievedProduct.Attributes,
-				"slug":            retrievedProduct.Slug,
-				"shortId":         retrievedProduct.ShortID,
-				"dimensions":      retrievedProduct.Dimensions,
-				"variations":      retrievedProduct.Variations,
-				"createdAt":       retrievedProduct.CreatedAt,
-				"updatedAt":       retrievedProduct.UpdatedAt,
-				"salesNumber":     retrievedProduct.SalesNumber,
-				"bannerUrl":       retrievedProduct.BannerUrl,
-				// Add more fields as needed
-			}
-			var variations []entities.Properties
-			cursor, err := propertiesCollection.Find(c, bson.M{"_id": bson.M{"$in": product.VariationsKey}})
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
-			defer cursor.Close(c)
-
-			// Iterate through the cursor to decode each variation
-			for cursor.Next(c) {
-				var variation entities.Properties
-				if err := cursor.Decode(&variation); err != nil {
+				// Create a detailed product structure
+				detailedProduct := map[string]interface{}{
+					"_id":             retrievedProduct.ID.Hex(),
+					"name":            retrievedProduct.Name,
+					"price":           retrievedProduct.Price,
+					"notExist":        retrievedProduct.NotExist,
+					"amazing":         retrievedProduct.Amazing,
+					"productType":     retrievedProduct.ProductType,
+					"quantity":        retrievedProduct.Quantity,
+					"comments":        retrievedProduct.Comment,
+					"parent":          retrievedProduct.Parent,
+					"categories":      retrievedProduct.Category,
+					"tags":            retrievedProduct.Tags,
+					"similarProducts": retrievedProduct.SimilarProducts,
+					"name_fuzzy":      retrievedProduct.NameFuzzy,
+					"images":          retrievedProduct.Images,
+					"details":         retrievedProduct.Details,
+					"discountPercent": retrievedProduct.DiscountPercent,
+					"stock":           retrievedProduct.Stock,
+					"categoryId":      retrievedProduct.CategoryID,
+					"attributes":      retrievedProduct.Attributes,
+					"slug":            retrievedProduct.Slug,
+					"shortId":         retrievedProduct.ShortID,
+					"dimensions":      retrievedProduct.Dimensions,
+					"variations":      retrievedProduct.Variations,
+					"createdAt":       retrievedProduct.CreatedAt,
+					"updatedAt":       retrievedProduct.UpdatedAt,
+					"salesNumber":     retrievedProduct.SalesNumber,
+					"bannerUrl":       retrievedProduct.BannerUrl,
+					// Add more fields as needed
+				}
+				var variations []entities.Properties
+				cursor, err := propertiesCollection.Find(c, bson.M{"_id": bson.M{"$in": product.VariationsKey}})
+				if err != nil {
 					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 					return
 				}
-				variations = append(variations, variation)
+				defer cursor.Close(c)
+
+				// Iterate through the cursor to decode each variation
+				for cursor.Next(c) {
+					var variation entities.Properties
+					if err := cursor.Decode(&variation); err != nil {
+						c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+						return
+					}
+					variations = append(variations, variation)
+				}
+				if err := cursor.Err(); err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					return
+				}
+
+				// Append both simplified and detailed products to the products slice
+				products = append(products, map[string]interface{}{
+					"_id":           product.Id.Hex(),
+					"quantity":      product.Quantity,
+					"variationsKey": product.VariationsKey,
+					"product":       detailedProduct,
+					"variations":    variations, // Include variations for product entries
+					"mixproducts":   []interface{}{},
+					// "mix":           mixes, // Set mix to nil for product entries
+				})
+
 			}
-			if err := cursor.Err(); err != nil {
+		} else if len(cart.Products) == 0 {
+			var mixes entities.Mixes
+
+			err := mixesCollection.FindOne(c, bson.M{"_id": cart.Mix}).Decode(&mixes)
+
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "not found mix"})
+				return
+			}
+
+			var mixProducts []entities.MixProducts
+			cur, err := mixProductCollection.Find(c, bson.M{"_id": bson.M{"$in": mixes.Products}})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "not found mixproduct"})
+				return
+			}
+
+			defer cur.Close(c)
+
+			// Iterate through the cursor to decode each variation
+			for cur.Next(c) {
+				var mixProduct entities.MixProducts
+				if err := cur.Decode(&mixProduct); err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					return
+				}
+
+				mixProducts = append(mixProducts, mixProduct)
+			}
+			if err := cur.Err(); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
-			// var mixes entities.Mixes
-			// err = cartCollection.FindOne(c, bson.M{"productId": product.ProductId}).Decode(&mixes)
-			// if err != nil {
-			// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			// 	return
-			// }
-			// var mixProduct []entities.MixProducts
-			// cursor, err = mixProductCollection.Find(c, bson.M{"_id": bson.M{"$in": mixes.Products}})
-			// if err != nil {
-			// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			// 	return
-			// }
-			// defer cursor.Close(c)
-
-			// // Iterate through the cursor to decode each variation
-			// for cursor.Next(c) {
-			// 	var mixpro entities.MixProducts
-			// 	if err := cursor.Decode(&mixpro); err != nil {
-			// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			// 		return
-			// 	}
-			// 	mixProduct = append(mixProduct, mixpro)
-			// }
-			// if err := cursor.Err(); err != nil {
-			// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			// 	return
-			// }
-
-			// Append both simplified and detailed products to the products slice
 			products = append(products, map[string]interface{}{
-				"_id":           product.Id.Hex(),
-				"quantity":      product.Quantity,
-				"variationsKey": product.VariationsKey,
-				"product":       detailedProduct,
-				"variations":    variations,
-				// "variations":  []interface{}{},
-				"mixproducts": []interface{}{},
-				// "mixproducts": mixProduct,
-				// "mix":         mixes,
+				"variations":  []interface{}{}, // Initialize variations as an empty array
+				"mixproducts": mixProducts,     // Include mix products for mix entries
+				"mix":         mixes,           // Include mix data for mix entries
 			})
+
+		} else if len(cart.Products) > 0 && !cart.Mix.IsZero() {
+			for _, product := range cart.Products {
+				// Fetch detailed product information from your data source (e.g., database)
+				var retrievedProduct entities.Products
+				err := prodCollection.FindOne(c, bson.M{"_id": product.ProductId}).Decode(&retrievedProduct)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch product", "details": err.Error()})
+					return
+				}
+
+				// Create a detailed product structure
+				detailedProduct := map[string]interface{}{
+					"_id":             retrievedProduct.ID.Hex(),
+					"name":            retrievedProduct.Name,
+					"price":           retrievedProduct.Price,
+					"notExist":        retrievedProduct.NotExist,
+					"amazing":         retrievedProduct.Amazing,
+					"productType":     retrievedProduct.ProductType,
+					"quantity":        retrievedProduct.Quantity,
+					"comments":        retrievedProduct.Comment,
+					"parent":          retrievedProduct.Parent,
+					"categories":      retrievedProduct.Category,
+					"tags":            retrievedProduct.Tags,
+					"similarProducts": retrievedProduct.SimilarProducts,
+					"name_fuzzy":      retrievedProduct.NameFuzzy,
+					"images":          retrievedProduct.Images,
+					"details":         retrievedProduct.Details,
+					"discountPercent": retrievedProduct.DiscountPercent,
+					"stock":           retrievedProduct.Stock,
+					"categoryId":      retrievedProduct.CategoryID,
+					"attributes":      retrievedProduct.Attributes,
+					"slug":            retrievedProduct.Slug,
+					"shortId":         retrievedProduct.ShortID,
+					"dimensions":      retrievedProduct.Dimensions,
+					"variations":      retrievedProduct.Variations,
+					"createdAt":       retrievedProduct.CreatedAt,
+					"updatedAt":       retrievedProduct.UpdatedAt,
+					"salesNumber":     retrievedProduct.SalesNumber,
+					"bannerUrl":       retrievedProduct.BannerUrl,
+					// Add more fields as needed
+				}
+				var variations []entities.Properties
+				cursor, err := propertiesCollection.Find(c, bson.M{"_id": bson.M{"$in": product.VariationsKey}})
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					return
+				}
+				defer cursor.Close(c)
+
+				// Iterate through the cursor to decode each variation
+				for cursor.Next(c) {
+					var variation entities.Properties
+					if err := cursor.Decode(&variation); err != nil {
+						c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+						return
+					}
+					variations = append(variations, variation)
+				}
+				if err := cursor.Err(); err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					return
+				}
+				var mixes entities.Mixes
+
+				err = mixesCollection.FindOne(c, bson.M{"_id": cart.Mix}).Decode(&mixes)
+
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "not found mix"})
+					return
+				}
+
+				var mixProducts []entities.MixProducts
+				cur, err := mixProductCollection.Find(c, bson.M{"_id": bson.M{"$in": mixes.Products}})
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "not found mixproduct"})
+					return
+				}
+
+				defer cur.Close(c)
+
+				// Iterate through the cursor to decode each variation
+				for cur.Next(c) {
+					var mixProduct entities.MixProducts
+					if err := cur.Decode(&mixProduct); err != nil {
+						c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+						return
+					}
+
+					mixProducts = append(mixProducts, mixProduct)
+				}
+				if err := cur.Err(); err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					return
+				}
+
+				// Append both simplified and detailed products to the products slice
+				products = append(products, map[string]interface{}{
+					"_id":           product.Id.Hex(),
+					"quantity":      product.Quantity,
+					"variationsKey": product.VariationsKey,
+					"product":       detailedProduct,
+					"variations":    variations,  // Include variations for product entries
+					"mixproducts":   mixProducts, // Initialize mixproducts as an empty arrayinterface
+					"mix":           mixes,       // Set mix to nil for product entries
+				})
+
+			}
+
 		}
+
 	}
 
 	if cartNotFound {
@@ -308,7 +428,7 @@ func GetCarts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "cart", "body": products})
-	// c.JSON(http.StatusNoContent, gin.H{})
+	c.JSON(http.StatusNoContent, gin.H{})
 }
 
 //@Summary Get Cart

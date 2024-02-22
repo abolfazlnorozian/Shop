@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"reflect"
 	"shop/auth"
 	"shop/database"
 	"shop/entities"
@@ -878,105 +877,85 @@ func PostMixesProduct(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	var cart entities.Catrs
-	cart.Id = primitive.NewObjectID()
-	cart.Status = "active"
-	cart.UserName = username
 
-	cart.CreatedAt = time.Now()
-	cart.UpdatedAt = time.Now()
-
-	// Create a ComeProduct based on the input JSON
-	product := entities.ComeProduct{
-		Quantity:  1,
-		ProductId: mix.ID,
-		Id:        primitive.NewObjectID(),
-	}
-
-	cart.Products = []entities.ComeProduct{product}
-
+	// Check if a document with the username already exists in cartCollection
 	filter := bson.M{"username": username}
 	var existingDoc entities.Catrs
 	err = cartCollection.FindOne(c, filter).Decode(&existingDoc)
 	if err == nil {
-
-		existingProductIndex := -1
-		for i, product := range existingDoc.Products {
-			if product.ProductId == cart.Products[0].ProductId && reflect.DeepEqual(product.VariationsKey, cart.Products[0].VariationsKey) {
-				existingProductIndex = i
-				break
-			}
-		}
-
-		if existingProductIndex != -1 {
-			// If productId already exists, update the quantity
-			existingDoc.Products[existingProductIndex].Quantity = product.Quantity
-
-			// If the quantity becomes zero, remove the product from the cart
-			if product.Quantity == 0 {
-				existingDoc.Products = append(existingDoc.Products[:existingProductIndex], existingDoc.Products[existingProductIndex+1:]...)
-			}
-		} else {
-			// If productId doesn't exist, add the new product to the Products array
-			existingDoc.Products = append(existingDoc.Products, cart.Products[0])
-		}
-
-		// Update the existing document in the database
-		update := bson.M{"$set": bson.M{
-			"products":  existingDoc.Products,
-			"updatedAt": time.Now(),
-		}}
-		_, err = cartCollection.UpdateOne(c, filter, update)
+		// If document exists, update it with the new mix
+		update := bson.M{"$set": bson.M{"mix": mix.ID}}
+		_, err := cartCollection.UpdateOne(c, filter, update)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"success": true, "message": "mix"})
-	}
+	} else {
+		// If document does not exist, create a new one
+		var cart entities.Catrs
+		cart.Id = primitive.NewObjectID()
+		cart.Status = "active"
+		cart.UserName = username
+		cart.Mix = mix.ID
+		cart.CreatedAt = time.Now()
+		cart.UpdatedAt = time.Now()
 
-	// Insert the new document into the database
-	_, err = cartCollection.InsertOne(c, cart)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-		return
+		// Initialize Products field if nil
+		if cart.Products == nil {
+			cart.Products = make([]entities.ComeProduct, 0)
+		}
+
+		// Insert the new document into the database
+		_, err := cartCollection.InsertOne(c, cart)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "mix"})
 	c.JSON(http.StatusNoContent, gin.H{})
-
 }
 
-// func FindAllProducts(c *gin.Context) {
-// 	if err := auth.CheckUserType(c, "admin"); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
+func DeleteMixofCart(c *gin.Context) {
+	// Parse the 'id' parameter from the URL
+	id := c.Param("id")
 
-// 	}
+	// Convert the 'id' parameter to a primitive.ObjectID
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid 'id' parameter"})
+		return
+	}
 
-// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 	var products []entities.Products
-// 	defer cancel()
+	// Get the token claims
+	tokenClaims, exists := c.Get("tokenClaims")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+		return
+	}
 
-// 	results, err := proCollection.Find(ctx, bson.M{})
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"massage": "Not Find Collection"})
-// 		return
-// 	}
-// 	//results.Close(ctx)
-// 	for results.Next(ctx) {
-// 		var pro entities.Products
-// 		err := results.Decode(&pro)
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-// 			return
+	claims, ok := tokenClaims.(*auth.SignedUserDetails)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+		return
+	}
 
-// 		}
-// 		products = append(products, pro)
+	// Delete the mix from the cart collection
+	filter := bson.M{"username": claims.Username, "mix": objectID}
+	update := bson.M{"$unset": bson.M{"mix": ""}}
+	_, err = cartCollection.UpdateOne(c, filter, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete mix from cart"})
+		return
+	}
 
-// 	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "mix_deleted"})
+}
 
-// 	c.JSON(http.StatusOK, response.Response{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": &products}})
-// }
+func OptionsMixByID(c *gin.Context) {
+	c.Status(http.StatusNoContent)
+}
 
 //*********************************************************************
 

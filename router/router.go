@@ -33,8 +33,14 @@ func ProRouter(r *gin.RouterGroup) {
 	pro.GET("/mix-products", services.GetMixProducts)
 	userAuth.POST("/mix", services.PostMixesProduct)
 	userAuth.OPTIONS("/mix", services.PostMixesProduct)
+	userAuth.DELETE("/mix/:id", services.DeleteMixofCart)
+	userAuth.OPTIONS("/mix/:id", services.DeleteMixofCart)
 
 }
+
+// func OptionsMixofCart(c *gin.Context) {
+// 	c.Status(http.StatusOK)
+// }
 
 //userAuth.Use(auth.UserAuthenticate())
 
@@ -113,6 +119,8 @@ func OrderRouter(r *gin.RouterGroup) {
 func CartRouter(r *gin.RouterGroup) {
 	ca := r.Group("/users")
 	ca.Use(auth.UserAuthenticate)
+	mix := r.Group("/")
+	mix.Use(auth.UserAuthenticate)
 
 	ca.POST("/carts/", services.AddCatrs)
 	ca.OPTIONS("/carts/", services.AddCatrs)
@@ -121,9 +129,16 @@ func CartRouter(r *gin.RouterGroup) {
 	//ca.OPTIONS("/carts", services.GetCarts)
 
 	ca.DELETE("/carts", services.DeleteCart)
+
+	// mix.DELETE("/mix", services.DeleteMixofCart)
+	// mix.OPTIONS("/mix", services.DeleteMixofCart)
 	//ca.OPTIONS("/carts/", services.DeleteCart)
 
 }
+
+// func OptionsMixofCart(c *gin.Context) {
+// 	c.Status(http.StatusOK)
+// }
 
 func State(r *gin.RouterGroup) {
 	s := r.Group("/json")

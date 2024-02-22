@@ -30,7 +30,7 @@ type Products struct {
 	Attributes      []Attribute          `json:"attributes" bson:"attributes"`
 	Slug            string               `json:"slug" bson:"slug"`
 	Dimensions      []Dimension          `json:"dimensions" bson:"dimensions"`
-	Variations      []Variation          `json:"variations" bson:"variations"`
+	Variations      []Variation          `json:"variations,omitempty" bson:"variations,omitempty"`
 	CreatedAt       time.Time            `json:"createdAt" bson:"createdAt"`
 	UpdatedAt       time.Time            `json:"updatedAt" bson:"updatedAt"`
 	V               int                  `json:"__v" bson:"__v"`
