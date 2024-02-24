@@ -245,6 +245,10 @@ func UpdatedUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
+	// if _, ok := c.Get("Sex"); !ok {
+	// 	// If user.Sex is not explicitly set in the request, set it to -1 to indicate female
+	// 	user.Sex = -1
+	// }
 
 	// Construct the update document
 	update := bson.M{}
@@ -256,9 +260,13 @@ func UpdatedUser(c *gin.Context) {
 	if user.LastName != "" {
 		update["lastname"] = user.LastName
 	}
+	// if user.Sex != 0 {
+	// 	update["sex"] = user.Sex
+	// }
 	if user.Sex != 0 {
 		update["sex"] = user.Sex
 	}
+
 	if user.Email != "" {
 		update["email"] = user.Email
 	}
