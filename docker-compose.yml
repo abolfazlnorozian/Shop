@@ -10,6 +10,7 @@ services:
       - MONGO_URL=${MONGO_URL}
       - DBNAME=${DBNAME}
       - CORS_DOMAIN=${CORS_DOMAIN}
+      - BASE_URL=${BASE_URL}
     depends_on:
       - mongo
     volumes:
