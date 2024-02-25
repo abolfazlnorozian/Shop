@@ -55,6 +55,8 @@ func main() {
 	router.CommentRoute(v1)
 	router.FavoriteRoute(v1)
 
+	// router.HtmlRoute(v2)
+
 	router.State(v2)
 
 	go func() {

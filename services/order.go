@@ -656,16 +656,65 @@ func SendToZarinpal(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-
+		c.Status(http.StatusOK)
 		redirectURL := "https://www.zarinpal.com/pg/StartPay/" + requestResponse.Authority
 		c.Redirect(http.StatusFound, redirectURL)
+
 		return
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Payment request failed"})
+
 		return
 	}
 
 }
+
+// func OptionsOrers(c *gin.Context) {
+// 	c.Status(http.StatusNoContent)
+// }
+
+// func BackPayment(c *gin.Context) {
+// 	var orderData entities.Order
+// 	authority := c.Query("Authority")
+// 	err := ordersCollection.FindOne(c, bson.M{"paymentId": authority}).Decode(&orderData)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
+// 		return
+// 	}
+// 	err = godotenv.Load(".env")
+// 	if err != nil {
+// 		log.Fatalln("error loading .env file")
+// 	}
+// 	merchantid := os.Getenv("ZARINPAL_MERCHANT_ID")
+
+// 	merchantID := merchantid
+
+// 	amount := orderData.TotalPrice
+
+// 	verify := zarinpal.NewVerify(merchantID, authority, uint(amount))
+// 	verifyResponse, err := verify.Exec()
+
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	if verifyResponse.Status == 100 || verifyResponse.Status == 101 {
+
+// 		_, err := ordersCollection.UpdateOne(c,
+// 			bson.M{"paymentId": authority},
+// 			bson.M{"$set": bson.M{"paymentStatus": "paid"}},
+// 		)
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 			return
+// 		}
+
+// 		c.JSON(http.StatusOK, gin.H{"status": "success"})
+// 	} else {
+// 		c.HTML(http.StatusOK, "unsuccessful_payment.html", gin.H{})
+// 	}
+// }
 
 func BackPayment(c *gin.Context) {
 	var orderData entities.Order
@@ -718,6 +767,18 @@ func BackPayment(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{"status": "failure"})
 	}
+}
+
+func ErrorHtmlHandler(c *gin.Context) {
+	c.File("./htmlcss/error.html")
+}
+
+func ServeCSSHandler(c *gin.Context) {
+	c.File("./htmlcss/styles.css")
+}
+
+func ServeImageHandler(c *gin.Context) {
+	c.File("./htmlcss/cancel.png")
 }
 
 // func AddOrder(c *gin.Context) {

@@ -113,9 +113,17 @@ func OrderRouter(r *gin.RouterGroup) {
 	ordr.OPTIONS("/orders/:id", services.GetOrderByID)
 	ordr.POST("/orders/checkout", services.SendToZarinpal)
 	ordr.OPTIONS("/orders/checkout", services.SendToZarinpal)
+	// ordr.OPTIONS("/orders/checkout", services.OptionsOrers)
 	or.GET("/users/orders/checkout/verify", services.BackPayment)
 
 }
+
+// func HtmlRoute(r *gin.RouterGroup) {
+// 	html := r.Group("/")
+// 	html.GET("/error-html", services.ErrorHtmlHandler)
+// 	html.GET("/stylesheets/fonts.css", services.ServeCSSHandler)
+// 	html.GET("/images/cancel.png", services.ServeImageHandler)
+// }
 func CartRouter(r *gin.RouterGroup) {
 	ca := r.Group("/users")
 	ca.Use(auth.UserAuthenticate)
