@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -50,8 +51,9 @@ func (r *Request) Exec() (*RequestResponse, error) {
 	if err := postData(r.endpoint, &r.data, result); err != nil {
 		return nil, err
 	}
+	fmt.Println("resultStatus:", result.Status)
 
-	if result.Status == 100 || result.Status == 101 {
+	if result.Status == 100 {
 		return result, nil
 
 	} else {
@@ -103,7 +105,7 @@ func (v *Verify) Exec() (*VerifyResponse, error) {
 		return result, nil
 
 	} else {
-		return result, errors.New("unsuccess payment")
+		return result, errors.New("unsuccessful payment")
 	}
 }
 

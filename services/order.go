@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -646,6 +647,7 @@ func SendToZarinpal(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	fmt.Println("respons:", requestResponse)
 
 	if requestResponse.Status == 100 {
 		_, err := ordersCollection.UpdateOne(c,
@@ -659,10 +661,10 @@ func SendToZarinpal(c *gin.Context) {
 		// c.Writer.WriteHeader(http.StatusOK)
 		// c.Writer.Write([]byte{})
 		// c.Status(http.StatusOK)
-		redirectURL := "https://www.zarinpal.com/pg/StartPay/" + requestResponse.Authority
-		// c.Redirect(http.StatusOK, redirectURL)
-		c.Header("Location", redirectURL)
-		c.Status(http.StatusOK)
+		// redirectURL := "https://www.zarinpal.com/pg/StartPay/" + requestResponse.Authority
+		// c.JSON(http.StatusOK, gin.H{"payment_url": redirectURL})
+		// c.Header("Location", redirectURL)
+		c.JSON(http.StatusOK, gin.H{})
 
 		return
 	} else {
