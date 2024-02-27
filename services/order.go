@@ -664,7 +664,7 @@ func SendToZarinpal(c *gin.Context) {
 		// redirectURL := "https://www.zarinpal.com/pg/StartPay/" + requestResponse.Authority
 		// c.JSON(http.StatusOK, gin.H{"payment_url": redirectURL})
 		// c.Header("Location", redirectURL)
-		c.JSON(http.StatusOK, gin.H{"success": true, "message": "pay", "body": gin.H{"url": requestResponse.Authority}})
+		c.JSON(http.StatusOK, gin.H{"success": true, "message": "pay", "body": gin.H{"url": "https://www.zarinpal.com/pg/StartPay/" + requestResponse.Authority}})
 
 		return
 	} else {
