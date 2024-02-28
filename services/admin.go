@@ -91,7 +91,7 @@ func LoginAdmin(c *gin.Context) {
 	}
 	token, refreshToken, _ := auth.GenerateAllTokens(*foundUser.Username, foundUser.Role)
 	auth.UpdateAllTokens(token, refreshToken, foundUser.Role)
-	err = userCollection.FindOne(ctx, bson.M{"role": foundUser.Role}).Decode(&foundUser)
+	err = usersCollection.FindOne(ctx, bson.M{"role": foundUser.Role}).Decode(&foundUser)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

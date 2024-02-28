@@ -717,8 +717,9 @@ func BackPayment(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		c.Redirect(http.StatusFound, "https://new.ghahvedark.com")
 
-		c.JSON(http.StatusOK, gin.H{"status": "success"})
+		// c.JSON(http.StatusOK, gin.H{"status": "success"})
 	} else {
 		// ServeFontandler(c)
 		// ServeImageHandler(c)

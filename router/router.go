@@ -96,7 +96,7 @@ func UserRoute(r *gin.RouterGroup) {
 	authUser.GET("/users/addresses", services.GetAddresses)
 	authUser.OPTIONS("/users/addresses", services.GetAddresses)
 	authUser.DELETE("/users/addresses/:id", services.DeleteAddressByID)
-	//authUser.OPTIONS("/users", services.OptionsCarts)
+	authUser.OPTIONS("/users/addresses/:id", services.DeleteAddressByID)
 
 }
 func OrderRouter(r *gin.RouterGroup) {

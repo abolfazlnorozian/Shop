@@ -1,7 +1,7 @@
 package services
 
 import (
-	"context"
+	"fmt"
 	"net/http"
 	"shop/auth"
 	"shop/entities"
@@ -21,7 +21,7 @@ import (
 //@Success 200  "Success"
 //@Router /api/users/addresses [post]
 func PostAddresses(c *gin.Context) {
-	var user entities.Users
+	// var user entities.Users
 
 	tokenClaims, exists := c.Get("tokenClaims")
 
@@ -47,15 +47,15 @@ func PostAddresses(c *gin.Context) {
 	addr.Id = primitive.NewObjectID()
 
 	filter := bson.M{"username": username}
-	err := userCollection.FindOne(c, filter).Decode(&user)
 
-	// Append the Addr object to the addresses field of the user document
-	user.Address = append(user.Address, addr)
+	// Update user.Address with the new address
 
-	// Update the user document in the database
-	update := bson.M{"$set": bson.M{"addresses": user.Address}}
-	_, err = usersCollection.UpdateOne(context.TODO(), filter, update)
+	// Perform the FindOneAndUpdate operation
+	update := bson.M{"$push": bson.M{"addresses": addr}}
+	_, err := usersCollection.UpdateOne(c, filter, update)
+	// err := usersCollection.FindOneAndUpdate(c, filter, update, options.FindOneAndUpdate().SetUpsert(true)).Decode(&user.Address)
 	if err != nil {
+		fmt.Println("Error updating user:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
 		return
 	}
@@ -104,7 +104,7 @@ func GetAddresses(c *gin.Context) {
 
 	// Display all address information
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "addresses", "body": user.Address})
-	// c.JSON(http.StatusNoContent, gin.H{})
+	c.JSON(http.StatusNoContent, gin.H{})
 }
 
 //@Summary Delete Address by ID
@@ -169,4 +169,7 @@ func DeleteAddressByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "remove_address", "body": gin.H{}})
+}
+func OptionsAddress(c *gin.Context) {
+	c.Status(http.StatusNoContent)
 }
