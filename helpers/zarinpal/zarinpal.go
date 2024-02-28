@@ -58,6 +58,7 @@ func (r *Request) Exec() (*RequestResponse, error) {
 
 	} else {
 		return result, errors.New("unsuccess payment")
+		// return result, errors.
 	}
 
 }
@@ -106,6 +107,7 @@ func (v *Verify) Exec() (*VerifyResponse, error) {
 
 	} else {
 		return result, errors.New("unsuccessful payment")
+		// return result,services.ServeFontandler("./assets/font.css")
 	}
 }
 

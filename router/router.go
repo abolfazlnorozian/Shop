@@ -114,16 +114,21 @@ func OrderRouter(r *gin.RouterGroup) {
 	ordr.POST("/orders/checkout", services.SendToZarinpal)
 	ordr.OPTIONS("/orders/checkout", services.SendToZarinpal)
 	// ordr.OPTIONS("/orders/checkout", services.OptionsOrers)
+
 	or.GET("/users/orders/checkout/verify", services.BackPayment)
 
 }
 
-// func HtmlRoute(r *gin.RouterGroup) {
-// 	html := r.Group("/")
-// 	html.GET("/error-html", services.ErrorHtmlHandler)
-// 	html.GET("/stylesheets/fonts.css", services.ServeCSSHandler)
-// 	html.GET("/images/cancel.png", services.ServeImageHandler)
-// }
+func AssetsRoute(r *gin.RouterGroup) {
+	html := r.Group("/")
+	html.GET("/stylesheets/style.css", services.ServeStyleCSSHandler)
+	html.GET("/stylesheets/fonts.css", services.ServeFontandler)
+	html.GET("/images/cancel.png", services.ServeImageHandler)
+
+	// html.GET("/ipg/assets/style.css", services.ServeStyleCSSHandler)
+	// html.GET("/ipg/assets/font.css", services.ServeFontandler)
+	// html.GET("/ipg/assets/cancel.png", services.ServeImageHandler)
+}
 func CartRouter(r *gin.RouterGroup) {
 	ca := r.Group("/users")
 	ca.Use(auth.UserAuthenticate)

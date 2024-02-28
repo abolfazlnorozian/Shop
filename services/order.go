@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"shop/database"
 	"shop/entities"
 	"shop/helpers/zarinpal"
+
 	"strconv"
 	"time"
 
@@ -679,49 +681,6 @@ func SendToZarinpal(c *gin.Context) {
 // 	c.Status(http.StatusNoContent)
 // }
 
-// func BackPayment(c *gin.Context) {
-// 	var orderData entities.Order
-// 	authority := c.Query("Authority")
-// 	err := ordersCollection.FindOne(c, bson.M{"paymentId": authority}).Decode(&orderData)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
-// 		return
-// 	}
-// 	err = godotenv.Load(".env")
-// 	if err != nil {
-// 		log.Fatalln("error loading .env file")
-// 	}
-// 	merchantid := os.Getenv("ZARINPAL_MERCHANT_ID")
-
-// 	merchantID := merchantid
-
-// 	amount := orderData.TotalPrice
-
-// 	verify := zarinpal.NewVerify(merchantID, authority, uint(amount))
-// 	verifyResponse, err := verify.Exec()
-
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-// 	if verifyResponse.Status == 100 || verifyResponse.Status == 101 {
-
-// 		_, err := ordersCollection.UpdateOne(c,
-// 			bson.M{"paymentId": authority},
-// 			bson.M{"$set": bson.M{"paymentStatus": "paid"}},
-// 		)
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 			return
-// 		}
-
-// 		c.JSON(http.StatusOK, gin.H{"status": "success"})
-// 	} else {
-// 		c.HTML(http.StatusOK, "unsuccessful_payment.html", gin.H{})
-// 	}
-// }
-
 func BackPayment(c *gin.Context) {
 	var orderData entities.Order
 	authority := c.Query("Authority")
@@ -744,7 +703,7 @@ func BackPayment(c *gin.Context) {
 	verifyResponse, err := verify.Exec()
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.HTML(http.StatusOK, "unsuccessful_payment.html", nil)
 		return
 	}
 
@@ -761,6 +720,10 @@ func BackPayment(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{"status": "success"})
 	} else {
+		// ServeFontandler(c)
+		// ServeImageHandler(c)
+		// ServeStyleCSSHandler(c)
+		// c.HTML(http.StatusOK, "./assets/unsuccessful_payment.html", nil)
 
 		_, err := ordersCollection.UpdateOne(c,
 			bson.M{"paymentId": authority},
@@ -770,22 +733,49 @@ func BackPayment(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		c.HTML(http.StatusOK, "unsuccessful_payment.html", nil)
 
-		c.JSON(http.StatusOK, gin.H{"status": "failure"})
 	}
 }
 
-func ErrorHtmlHandler(c *gin.Context) {
-	c.File("./htmlcss/error.html")
+// func ServeFontandler(c *gin.Context) {
+// 	c.File("./assets/font.css")
+// 	c.Status(http.StatusNotModified)
+// }
+func ServeFontandler(c *gin.Context) {
+	content, err := ioutil.ReadFile("./assets/font.css")
+	if err != nil {
+		// Handle error (e.g., log it, return an error response, etc.)
+		return
+	}
+	c.Data(http.StatusOK, "text/css", content)
 }
-
-func ServeCSSHandler(c *gin.Context) {
-	c.File("./htmlcss/styles.css")
+func ServeStyleCSSHandler(c *gin.Context) {
+	content, err := ioutil.ReadFile("./assets/style.css")
+	if err != nil {
+		// Handle error (e.g., log it, return an error response, etc.)
+		return
+	}
+	c.Data(http.StatusOK, "text/css", content)
 }
-
 func ServeImageHandler(c *gin.Context) {
-	c.File("./htmlcss/cancel.png")
+	content, err := ioutil.ReadFile("./assets/cancel.png")
+	if err != nil {
+		// Handle error (e.g., log it, return an error response, etc.)
+		return
+	}
+	c.Data(http.StatusOK, "text/css", content)
 }
+
+// func ServeStyleCSSHandler(c *gin.Context) {
+// 	c.File("./assets/style.css")
+// 	c.Status(http.StatusNotModified)
+// }
+
+// func ServeImageHandler(c *gin.Context) {
+// 	c.File("./assets/cancel.png")
+// 	c.Status(http.StatusNotModified)
+// }
 
 // func AddOrder(c *gin.Context) {
 // 	var order entities.Order

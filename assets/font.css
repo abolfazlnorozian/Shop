@@ -1,0 +1,24 @@
+
+
+@font-face{
+    font-family:'vazir-medium';
+    font-style: normal;
+    src:url('./fonts/Vazir-Medium.ttf')
+    }
+    
+    @font-face{
+    font-family:'VIP-HALA';
+    font-style: normal;
+    src:url('./fonts/VIP-Hala-Bold.otf') format('opentype');
+    }
+    
+    @font-face {
+        font-family: Kalame;
+        src: url('./fonts/Kalameh_Bold.ttf') format('truetype');
+        font-weight: bold;
+    }
+    
+    body,h1,h2,h3,h4,h5,h6,p,span,div{
+        font-family: vazir;
+    }
+    

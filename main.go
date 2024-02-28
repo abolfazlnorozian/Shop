@@ -20,7 +20,7 @@ import (
 func main() {
 	r := gin.Default()
 	// r.Use(handleDoubleSlash())
-
+	r.LoadHTMLGlob("/home/abolfazl/src/shop/assets/*")
 	v1 := r.Group("api")
 	v2 := r.Group("/")
 	v2.Use(removeDoubleSlashesMiddleware)
@@ -55,7 +55,7 @@ func main() {
 	router.CommentRoute(v1)
 	router.FavoriteRoute(v1)
 
-	// router.HtmlRoute(v2)
+	router.AssetsRoute(v2)
 
 	router.State(v2)
 
