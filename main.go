@@ -20,7 +20,7 @@ import (
 func main() {
 	r := gin.Default()
 	// r.Use(handleDoubleSlash())
-	r.LoadHTMLGlob("/home/abolfazl/src/shop/assets/*")
+	r.LoadHTMLGlob("./assets/*")
 	v1 := r.Group("api")
 	v2 := r.Group("/")
 	v2.Use(removeDoubleSlashesMiddleware)
