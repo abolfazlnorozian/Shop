@@ -53,7 +53,7 @@ func (r *Request) Exec() (*RequestResponse, error) {
 	}
 	fmt.Println("resultStatus:", result.Status)
 
-	if result.Status == 100 {
+	if result.Status == 100 || result.Status == 101 {
 		return result, nil
 
 	} else {
