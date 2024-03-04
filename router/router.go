@@ -123,7 +123,8 @@ func AssetsRoute(r *gin.RouterGroup) {
 	html := r.Group("/")
 	html.GET("/stylesheets/style.css", services.ServeStyleCSSHandler)
 	html.GET("/stylesheets/fonts.css", services.ServeFontandler)
-	html.GET("/images/cancel.png", services.ServeImageHandler)
+	html.GET("/images/cancel.png", services.ServeImageCancel)
+	html.GET("/images/checked.png", services.ServeImageOk)
 
 	// html.GET("/ipg/assets/style.css", services.ServeStyleCSSHandler)
 	// html.GET("/ipg/assets/font.css", services.ServeFontandler)

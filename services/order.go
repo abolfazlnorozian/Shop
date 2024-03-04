@@ -163,7 +163,7 @@ func AddOrder(c *gin.Context) {
 	order.IsCoupon = false
 	order.Message = ""
 	order.TotalDiscount = 0
-	order.PostalCost = 40000
+	order.PostalCost = 0
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
 	order.V = 0
@@ -729,7 +729,7 @@ func BackPayment(c *gin.Context) {
 		phoneNumberWithZero := "0" + rawPhoneNumber
 		helpers.BackPaymentSendSms(orderIdStr, phoneNumberWithZero)
 
-		c.Redirect(http.StatusFound, "https://new.ghahvedark.com/account?tab=orders")
+		c.HTML(http.StatusOK, "success_payment.html", nil)
 
 		// c.JSON(http.StatusOK, gin.H{"status": "success"})
 	} else {
@@ -767,7 +767,7 @@ func ServeStyleCSSHandler(c *gin.Context) {
 	}
 	c.Data(http.StatusOK, "text/css", content)
 }
-func ServeImageHandler(c *gin.Context) {
+func ServeImageCancel(c *gin.Context) {
 	content, err := ioutil.ReadFile("./assets/cancel.png")
 	if err != nil {
 		// Handle error (e.g., log it, return an error response, etc.)
@@ -775,8 +775,8 @@ func ServeImageHandler(c *gin.Context) {
 	}
 	c.Data(http.StatusOK, "text/css", content)
 }
-func ServeFaviconIco(c *gin.Context) {
-	content, err := ioutil.ReadFile("./assets/favicon.ico")
+func ServeImageOk(c *gin.Context) {
+	content, err := ioutil.ReadFile("./assets/checked.png")
 	if err != nil {
 		// Handle error (e.g., log it, return an error response, etc.)
 		return
