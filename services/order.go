@@ -163,7 +163,7 @@ func AddOrder(c *gin.Context) {
 	order.IsCoupon = false
 	order.Message = ""
 	order.TotalDiscount = 0
-	order.PostalCost = 0
+	order.PostalCost = 40000
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
 	order.V = 0
