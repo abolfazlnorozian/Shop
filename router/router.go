@@ -141,6 +141,7 @@ func CartRouter(r *gin.RouterGroup) {
 	ca.GET("/carts", services.GetCarts)
 	//ca.OPTIONS("/carts", services.GetCarts)
 
+	// ca.DELETE("/carts/:id", services.DeleteCart)
 	ca.DELETE("/carts", services.DeleteCart)
 
 	// mix.DELETE("/mix", services.DeleteMixofCart)

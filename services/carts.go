@@ -174,11 +174,11 @@ func GetCarts(c *gin.Context) {
 			c.JSON(http.StatusCreated, gin.H{
 				"success": true,
 				"message": "cart",
-				"body": []map[string]interface{}{
-					{
-						"variations":  []interface{}{},
-						"mixproducts": []interface{}{},
-					},
+				"body":    []map[string]interface{}{
+					// {
+					// 	"variations":  []interface{}{},
+					// 	"mixproducts": []interface{}{},
+					// },
 				},
 			})
 			return
@@ -416,11 +416,11 @@ func GetCarts(c *gin.Context) {
 		emptyCartResponse := gin.H{
 			"success": true,
 			"message": "cart",
-			"body": []map[string]interface{}{
-				{
-					"variations":  []interface{}{},
-					"mixproducts": []interface{}{},
-				},
+			"body":    []map[string]interface{}{
+				// {
+				// 	// "variations":  []interface{}{},
+				// 	// "mixproducts": []interface{}{},
+				// },
 			},
 		}
 		c.JSON(http.StatusCreated, emptyCartResponse)
@@ -446,7 +446,7 @@ func DeleteCart(c *gin.Context) {
 
 	// Check if the 'id' parameter is valid
 	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid 'id' parameter"})
+		c.JSON(http.StatusBadRequest, gin.H{"error1": "Invalid 'id' parameter"})
 		return
 	}
 

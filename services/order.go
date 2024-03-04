@@ -11,6 +11,7 @@ import (
 	"shop/auth"
 	"shop/database"
 	"shop/entities"
+	"shop/helpers"
 	"shop/helpers/zarinpal"
 
 	"strconv"
@@ -162,7 +163,7 @@ func AddOrder(c *gin.Context) {
 	order.IsCoupon = false
 	order.Message = ""
 	order.TotalDiscount = 0
-	order.PostalCost = 40000
+	order.PostalCost = 0
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
 	order.V = 0
@@ -678,6 +679,7 @@ func SendToZarinpal(c *gin.Context) {
 
 func BackPayment(c *gin.Context) {
 	var orderData entities.Order
+	var user entities.Users
 	authority := c.Query("Authority")
 
 	err := ordersCollection.FindOne(c, bson.M{"paymentId": authority}).Decode(&orderData)
@@ -703,6 +705,8 @@ func BackPayment(c *gin.Context) {
 		return
 	}
 
+	orderIdStr := strconv.Itoa(int(orderData.Id.(int32)))
+
 	if verifyResponse.Status == 100 || verifyResponse.Status == 101 {
 
 		_, err := ordersCollection.UpdateOne(c,
@@ -713,6 +717,17 @@ func BackPayment(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		err = usersCollection.FindOne(c, bson.M{"_id": orderData.UserId}).Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"errorUser": err.Error()})
+			return
+		}
+		// Get the raw phone number from the user document
+		rawPhoneNumber := user.PhoneNumber
+
+		// Prepend the leading zero to the phone number
+		phoneNumberWithZero := "0" + rawPhoneNumber
+		helpers.BackPaymentSendSms(orderIdStr, phoneNumberWithZero)
 
 		c.Redirect(http.StatusFound, "https://new.ghahvedark.com/account?tab=orders")
 
@@ -754,6 +769,14 @@ func ServeStyleCSSHandler(c *gin.Context) {
 }
 func ServeImageHandler(c *gin.Context) {
 	content, err := ioutil.ReadFile("./assets/cancel.png")
+	if err != nil {
+		// Handle error (e.g., log it, return an error response, etc.)
+		return
+	}
+	c.Data(http.StatusOK, "text/css", content)
+}
+func ServeFaviconIco(c *gin.Context) {
+	content, err := ioutil.ReadFile("./assets/favicon.ico")
 	if err != nil {
 		// Handle error (e.g., log it, return an error response, etc.)
 		return
