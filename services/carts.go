@@ -1,6 +1,8 @@
 package services
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"reflect"
 	"shop/auth"
@@ -66,6 +68,28 @@ func AddCatrs(c *gin.Context) {
 
 	cart.CreatedAt = time.Now()
 	cart.UpdatedAt = time.Now()
+	numberOfKeys, err := GetNumberOfKeys(input.ProductId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Error getting number of keys"})
+		return
+	}
+	var sanitizedVariationsKey []int
+	for _, key := range input.VariationsKey {
+		if key != 0 {
+			sanitizedVariationsKey = append(sanitizedVariationsKey, key)
+		}
+	}
+
+	// Use the sanitizedVariationsKey for validation
+	if len(sanitizedVariationsKey) != numberOfKeys {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "variationsKey_is_invalid", "body": gin.H{}})
+		return
+	}
+
+	if len(input.VariationsKey) != numberOfKeys {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "variationsKey_is_invalid", "body": gin.H{}})
+		return
+	}
 
 	// Create a ComeProduct based on the input JSON
 	product := entities.ComeProduct{
@@ -74,12 +98,13 @@ func AddCatrs(c *gin.Context) {
 		ProductId:     input.ProductId,
 		Id:            primitive.NewObjectID(),
 	}
+	// product.VariationsKey = make([]int, numberOfKeys)
 
 	cart.Products = []entities.ComeProduct{product}
 
 	filter := bson.M{"username": username}
 	var existingDoc entities.Catrs
-	err := cartCollection.FindOne(c, filter).Decode(&existingDoc)
+	err = cartCollection.FindOne(c, filter).Decode(&existingDoc)
 	if err == nil {
 
 		existingProductIndex := -1
@@ -127,6 +152,31 @@ func AddCatrs(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "cart_edited", "body": gin.H{}})
 	c.JSON(http.StatusNoContent, gin.H{})
+}
+
+func GetNumberOfKeys(productId primitive.ObjectID) (int, error) {
+	filter := bson.M{"_id": productId}
+
+	var product entities.Products
+	err := prodCollection.FindOne(context.Background(), filter).Decode(&product)
+	if err != nil {
+		return 0, err
+	}
+
+	var keysCount int
+	for i, variation := range product.Variations {
+		if i == 0 {
+			// Initialize keysCount with the number of keys in the first variation
+			keysCount = len(variation.Keys)
+		} else {
+			// Check if the number of keys in the current variation matches keysCount
+			if len(variation.Keys) != keysCount {
+				return 0, errors.New("the number of keys in variations is not consistent")
+			}
+		}
+	}
+
+	return keysCount, nil
 }
 
 //@Summary Get Cart
