@@ -13,6 +13,7 @@ import (
 	"shop/entities"
 	"shop/helpers"
 	"shop/helpers/zarinpal"
+	"sort"
 
 	"strconv"
 	"time"
@@ -163,7 +164,7 @@ func AddOrder(c *gin.Context) {
 	order.IsCoupon = false
 	order.Message = ""
 	order.TotalDiscount = 0
-	order.PostalCost = 0
+	order.PostalCost = 40000
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
 	order.V = 0
@@ -204,17 +205,25 @@ func AddOrder(c *gin.Context) {
 
 			var selectedVariation entities.Variation
 			for _, variation := range retrievedProduct.Variations {
+
+				sort.Ints(variationKey) // Sort variationKey
+				sort.Ints(variation.Keys)
 				if reflect.DeepEqual(variation.Keys, variationKey) {
 					selectedVariation = variation
 					break
 				}
 			}
 
+			if selectedVariation.Id.IsZero() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Selected variation not found"})
+				return
+			}
+
 			orderProduct := entities.Product{
 				Quantity:        productQuantity,
 				Id:              retrievedProduct.ID,
 				Name:            retrievedProduct.Name,
-				Price:           retrievedProduct.Price,
+				Price:           selectedVariation.Price,
 				VariationKey:    selectedVariation.Keys,
 				ProductId:       product.ProductId,
 				DiscountPercent: float64(retrievedProduct.DiscountPercent),
@@ -309,17 +318,25 @@ func AddOrder(c *gin.Context) {
 
 			var selectedVariation entities.Variation
 			for _, variation := range retrievedProduct.Variations {
+
+				sort.Ints(variationKey) // Sort variationKey
+				sort.Ints(variation.Keys)
 				if reflect.DeepEqual(variation.Keys, variationKey) {
 					selectedVariation = variation
 					break
 				}
 			}
 
+			if selectedVariation.Id.IsZero() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Selected variation not found"})
+				return
+			}
+
 			orderProduct := entities.Product{
 				Quantity:        productQuantity,
 				Id:              retrievedProduct.ID,
 				Name:            retrievedProduct.Name,
-				Price:           retrievedProduct.Price,
+				Price:           selectedVariation.Price,
 				VariationKey:    selectedVariation.Keys,
 				ProductId:       product.ProductId,
 				DiscountPercent: float64(retrievedProduct.DiscountPercent),

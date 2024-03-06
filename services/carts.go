@@ -278,6 +278,7 @@ func GetCarts(c *gin.Context) {
 				}
 				var variations []entities.Properties
 				cursor, err := propertiesCollection.Find(c, bson.M{"_id": bson.M{"$in": product.VariationsKey}})
+
 				if err != nil {
 					c.JSON(http.StatusInternalServerError, gin.H{"error1": err.Error()})
 					return
