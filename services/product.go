@@ -8,6 +8,7 @@ import (
 	"shop/auth"
 	"shop/database"
 	"shop/entities"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -86,6 +87,10 @@ func GetProductBySlug(c *gin.Context) {
 	}
 
 	proWithCategories.Dimension = dimensions
+	// Sort variations by quantity (1 first, then 0)
+	sort.Slice(proWithCategories.Variations, func(i, j int) bool {
+		return proWithCategories.Variations[i].Quantity > proWithCategories.Variations[j].Quantity
+	})
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "product", "body": proWithCategories})
 }
