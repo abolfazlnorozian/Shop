@@ -279,7 +279,7 @@ func GetCarts(c *gin.Context) {
 				var variations []entities.Properties
 				cursor, err := propertiesCollection.Find(c, bson.M{"_id": bson.M{"$in": product.VariationsKey}})
 				if err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					c.JSON(http.StatusInternalServerError, gin.H{"error1": err.Error()})
 					return
 				}
 				defer cursor.Close(c)
@@ -288,13 +288,13 @@ func GetCarts(c *gin.Context) {
 				for cursor.Next(c) {
 					var variation entities.Properties
 					if err := cursor.Decode(&variation); err != nil {
-						c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+						c.JSON(http.StatusInternalServerError, gin.H{"error2": err.Error()})
 						return
 					}
 					variations = append(variations, variation)
 				}
 				if err := cursor.Err(); err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					c.JSON(http.StatusInternalServerError, gin.H{"error3": err.Error()})
 					return
 				}
 
@@ -333,14 +333,14 @@ func GetCarts(c *gin.Context) {
 			for cur.Next(c) {
 				var mixProduct entities.MixProducts
 				if err := cur.Decode(&mixProduct); err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					c.JSON(http.StatusInternalServerError, gin.H{"error4": err.Error()})
 					return
 				}
 
 				mixProducts = append(mixProducts, mixProduct)
 			}
 			if err := cur.Err(); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				c.JSON(http.StatusInternalServerError, gin.H{"error5": err.Error()})
 				return
 			}
 			products = append(products, map[string]interface{}{
@@ -402,13 +402,13 @@ func GetCarts(c *gin.Context) {
 				for cursor.Next(c) {
 					var variation entities.Properties
 					if err := cursor.Decode(&variation); err != nil {
-						c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+						c.JSON(http.StatusInternalServerError, gin.H{"error6": err.Error()})
 						return
 					}
 					variations = append(variations, variation)
 				}
 				if err := cursor.Err(); err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					c.JSON(http.StatusInternalServerError, gin.H{"error7": err.Error()})
 					return
 				}
 				var mixes entities.Mixes
@@ -433,14 +433,14 @@ func GetCarts(c *gin.Context) {
 				for cur.Next(c) {
 					var mixProduct entities.MixProducts
 					if err := cur.Decode(&mixProduct); err != nil {
-						c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+						c.JSON(http.StatusInternalServerError, gin.H{"error8": err.Error()})
 						return
 					}
 
 					mixProducts = append(mixProducts, mixProduct)
 				}
 				if err := cur.Err(); err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					c.JSON(http.StatusInternalServerError, gin.H{"error9": err.Error()})
 					return
 				}
 

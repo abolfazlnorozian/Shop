@@ -160,14 +160,20 @@ func DeleteAddressByID(c *gin.Context) {
 		return
 	}
 
-	// Update the user's addresses in the database using $pull
-	update := bson.M{"$set": bson.M{"addresses": updatedAddresses}}
+	var update bson.M // declare the update variable
+	if len(updatedAddresses) == 0 {
+		// If there are no addresses left, set addresses field to an empty array
+		update = bson.M{"$set": bson.M{"addresses": []entities.Addr{}}}
+	} else {
+		// If there are remaining addresses, update the addresses field with the updated addresses
+		update = bson.M{"$set": bson.M{"addresses": updatedAddresses}}
+	}
+
 	_, err = usersCollection.UpdateOne(c, filter, update)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user addresses"})
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "remove_address", "body": gin.H{}})
 }
 func OptionsAddress(c *gin.Context) {
