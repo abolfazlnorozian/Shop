@@ -68,6 +68,15 @@ func AddCatrs(c *gin.Context) {
 
 	cart.CreatedAt = time.Now()
 	cart.UpdatedAt = time.Now()
+
+	// Create a ComeProduct based on the input JSON
+	product := entities.ComeProduct{
+		Quantity:      1,
+		VariationsKey: input.VariationsKey,
+		ProductId:     input.ProductId,
+		Id:            primitive.NewObjectID(),
+	}
+	// product.VariationsKey = make([]int, numberOfKeys)
 	numberOfKeys, err := GetNumberOfKeys(input.ProductId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Error getting number of keys"})
@@ -90,15 +99,6 @@ func AddCatrs(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"success": false, "message": "variationsKey_is_invalid", "body": gin.H{}})
 		return
 	}
-
-	// Create a ComeProduct based on the input JSON
-	product := entities.ComeProduct{
-		Quantity:      1,
-		VariationsKey: input.VariationsKey,
-		ProductId:     input.ProductId,
-		Id:            primitive.NewObjectID(),
-	}
-	// product.VariationsKey = make([]int, numberOfKeys)
 
 	cart.Products = []entities.ComeProduct{product}
 
