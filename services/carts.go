@@ -277,38 +277,67 @@ func GetCarts(c *gin.Context) {
 					// Add more fields as needed
 				}
 				var variations []entities.Properties
-				cursor, err := propertiesCollection.Find(c, bson.M{"_id": bson.M{"$in": product.VariationsKey}})
-
-				if err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error1": err.Error()})
-					return
-				}
-				defer cursor.Close(c)
-
-				// Iterate through the cursor to decode each variation
-				for cursor.Next(c) {
-					var variation entities.Properties
-					if err := cursor.Decode(&variation); err != nil {
-						c.JSON(http.StatusInternalServerError, gin.H{"error2": err.Error()})
+				if product.VariationsKey == nil {
+					cur, err := prodCollection.Find(c, bson.M{"_id": product.ProductId})
+					if err != nil {
+						c.JSON(http.StatusInternalServerError, gin.H{"error0": err.Error()})
 						return
 					}
-					variations = append(variations, variation)
-				}
-				if err := cursor.Err(); err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error3": err.Error()})
-					return
-				}
+					defer cur.Close(c)
+					for cur.Next(c) {
+						var pro map[string]interface{}
+						if err := cur.Decode(&pro); err != nil {
+							c.JSON(http.StatusInternalServerError, gin.H{"error22": err.Error()})
+							return
 
-				// Append both simplified and detailed products to the products slice
-				products = append(products, map[string]interface{}{
-					"_id":           product.Id.Hex(),
-					"quantity":      product.Quantity,
-					"variationsKey": product.VariationsKey,
-					"product":       detailedProduct,
-					"variations":    variations, // Include variations for product entries
-					"mixproducts":   []interface{}{},
-					// "mix":           mixes, // Set mix to nil for product entries
-				})
+						}
+						// Append both simplified and detailed products to the products slice
+						products = append(products, map[string]interface{}{
+							"_id":           product.Id.Hex(),
+							"quantity":      product.Quantity,
+							"variationsKey": product.VariationsKey,
+							"product":       detailedProduct,
+							"variations":    variations, // Include variations for product entries
+							"mixproducts":   []interface{}{},
+							// "mix":           mixes, // Set mix to nil for product entries
+						})
+					}
+					// continue
+
+				} else {
+					cursor, err := propertiesCollection.Find(c, bson.M{"_id": bson.M{"$in": product.VariationsKey}})
+
+					if err != nil {
+						c.JSON(http.StatusInternalServerError, gin.H{"error1": err.Error()})
+						return
+					}
+					defer cursor.Close(c)
+
+					// Iterate through the cursor to decode each variation
+					for cursor.Next(c) {
+						var variation entities.Properties
+						if err := cursor.Decode(&variation); err != nil {
+							c.JSON(http.StatusInternalServerError, gin.H{"error2": err.Error()})
+							return
+						}
+						variations = append(variations, variation)
+					}
+					if err := cursor.Err(); err != nil {
+						c.JSON(http.StatusInternalServerError, gin.H{"error3": err.Error()})
+						return
+					}
+
+					// Append both simplified and detailed products to the products slice
+					products = append(products, map[string]interface{}{
+						"_id":           product.Id.Hex(),
+						"quantity":      product.Quantity,
+						"variationsKey": product.VariationsKey,
+						"product":       detailedProduct,
+						"variations":    variations, // Include variations for product entries
+						"mixproducts":   []interface{}{},
+						// "mix":           mixes, // Set mix to nil for product entries
+					})
+				}
 
 			}
 		} else if len(cart.Products) == 0 {
