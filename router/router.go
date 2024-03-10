@@ -56,8 +56,9 @@ func CategoryRouter(r *gin.RouterGroup) {
 }
 
 func AdminRoutes(r *gin.RouterGroup) {
-	u := r.Group("/")
-	u.POST("/createdAdmin", services.RegisterAdmins)
+	u := r.Group("/admin")
+	// u.Use(auth.AdminAuthenticate())
+	// u.POST("/createdAdmin", services.RegisterAdmins)
 	u.POST("/login", services.LoginAdmin)
 }
 func Uploader(r *gin.RouterGroup) {

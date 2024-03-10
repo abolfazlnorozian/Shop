@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -18,7 +20,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var userCollection *mongo.Collection = database.GetCollection(database.DB, "admins")
+var adminCollection *mongo.Collection = database.GetCollection(database.DB, "admins")
 
 var SECRET_KEY string = os.Getenv("SECRET_KEY")
 
@@ -26,6 +28,7 @@ type SignedDetails struct {
 	Username string
 	Role     string
 	Uid      string
+	Password string
 	jwt.StandardClaims
 }
 
@@ -37,20 +40,33 @@ func HashPassword(password string) string {
 	return string(bytes)
 
 }
+func VerifyPasswordSHA1(userPassword string, hashedPassword string) bool {
+	// Compute SHA-1 hash of the user-provided password
+	hashed := sha1.New()
+	hashed.Write([]byte(userPassword))
+	hashedBytes := hashed.Sum(nil)
+	hashedString := hex.EncodeToString(hashedBytes)
 
-func VerifyPassword(userPassword string, providedPassword string) (bool, string) {
-	err := bcrypt.CompareHashAndPassword([]byte(providedPassword), []byte(userPassword))
-	check := true
-	msg := ""
-	if err != nil {
-		msg = fmt.Sprintf("email of password is incorrect")
-		check = false
-	}
-	return check, msg
+	log.Printf("Computed hash: %s\n", hashedString)
+	log.Printf("Stored hashed password: %s\n", hashedPassword)
 
+	// Compare the computed hash with the stored hashed password
+	return hashedString == hashedPassword
 }
 
-func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
+// func VerifyPassword(userPassword string, providedPassword string) (bool, string) {
+// 	err := bcrypt.CompareHashAndPassword([]byte(providedPassword), []byte(userPassword))
+// 	check := true
+// 	msg := ""
+// 	if err != nil {
+// 		msg = fmt.Sprintf("email of password is incorrect")
+// 		check = false
+// 	}
+// 	return check, msg
+
+// }
+
+func ValidateAdminToken(signedToken string) (claims *SignedDetails, msg string) {
 
 	fmt.Println("Original token:", signedToken)
 
@@ -88,10 +104,11 @@ func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
 
 }
 
-func GenerateAllTokens(username string, role string) (signedToken string, signedRefreshToken string, err error) {
+func GenerateAllTokens(username string, role string, password string) (signedToken string, signedRefreshToken string, err error) {
 	claims := &SignedDetails{
 		Username: username,
 		Role:     role,
+		Password: password,
 		//Uid:      uid,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(24)).Unix(),
@@ -126,7 +143,7 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, role string)
 	opt := options.UpdateOptions{
 		Upsert: &upsert,
 	}
-	_, err := userCollection.UpdateOne(
+	_, err := adminCollection.UpdateOne(
 		ctx,
 		filter,
 		bson.D{

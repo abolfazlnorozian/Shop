@@ -16,14 +16,16 @@ func AdminAuthenticate() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		claims, err := ValidateToken(clientToken)
+		aclaims, err := ValidateAdminToken(clientToken)
 		if err != "" {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 			c.Abort()
 			return
 		}
-		c.Set("username", claims.Username)
-		c.Set("role", claims.Role)
+		c.Set("username", aclaims.Username)
+		c.Set("role", aclaims.Role)
+		c.Set("password", aclaims.Password)
+		c.Set("tokenClaims", aclaims)
 		c.Next()
 
 	}

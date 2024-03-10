@@ -480,9 +480,9 @@ func GetCarts(c *gin.Context) {
 					"quantity":      product.Quantity,
 					"variationsKey": product.VariationsKey,
 					"product":       detailedProduct,
-					"variations":    variations,  // Include variations for product entries
-					"mixproducts":   mixProducts, // Initialize mixproducts as an empty arrayinterface
-					"mix":           mixes,       // Set mix to nil for product entries
+					"variations":    variations,
+					"mixproducts":   mixProducts,
+					"mix":           mixes,
 				})
 
 			}
