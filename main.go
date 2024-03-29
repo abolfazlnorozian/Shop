@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"shop/adminroute"
 	"shop/database"
 	"strings"
 
@@ -18,10 +19,20 @@ import (
 )
 
 func main() {
+	// password := "A3Yx5hNT83"
+
+	// hashedPassword, err := auth.GenerateBcryptHash(password)
+	// if err != nil {
+	// 	fmt.Println("Error generating hashed password:", err)
+	// 	return
+	// }
+
+	// fmt.Println("Bcrypt hash of password:", hashedPassword)
 	r := gin.Default()
 	// r.Use(handleDoubleSlash())
 	r.LoadHTMLGlob("./assets/*")
 	v1 := r.Group("api")
+
 	v2 := r.Group("/")
 	v2.Use(removeDoubleSlashesMiddleware)
 
@@ -34,17 +45,18 @@ func main() {
 	// 	port = "8000"
 	// }
 	// r.Use(corsMiddleware())
+
 	v1.Use(corsMiddleware())
 	v2.Use(corsMiddleware())
+
 	// Configure CORS middleware
 	// corsConfig := cors.DefaultConfig()
 	// corsConfig.AllowOrigins = []string{os.Getenv("CORS_DOMAIN")}
 	// corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	// r.Use(cors.New(corsConfig))
-
+	router.ApiGh(v2)
 	router.ProRouter(v1)
 	router.CategoryRouter(v1)
-	router.AdminRoutes(v1)
 	router.Uploader(v1)
 	router.Downloader(v2)
 	router.UserRoute(v1)
@@ -54,10 +66,15 @@ func main() {
 	router.PageRoute(v1)
 	router.CommentRoute(v1)
 	router.FavoriteRoute(v1)
-
 	router.AssetsRoute(v2)
-
 	router.State(v2)
+
+	//**********************
+	adminroute.AdminCategoryRouter(v1)
+	adminroute.AdminRoutes(v1)
+	adminroute.AdminBrandRoute(v1)
+	adminroute.AdminProductRoute(v1)
+	adminroute.Comments(v1)
 
 	go func() {
 		database.MD()
@@ -84,6 +101,7 @@ func getPort() string {
 	port := os.Getenv("PORT")
 	if port == "" {
 		return "8000"
+
 	}
 	return port
 }

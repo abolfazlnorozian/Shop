@@ -10,13 +10,13 @@ import (
 
 func AdminAuthenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		clientToken := c.Request.Header.Get("token")
-		if clientToken == "" {
+		adminToken := c.Request.Header.Get("token")
+		if adminToken == "" {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("no Authorization header provided")})
 			c.Abort()
 			return
 		}
-		aclaims, err := ValidateAdminToken(clientToken)
+		aclaims, err := ValidateAdminToken(adminToken)
 		if err != "" {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 			c.Abort()
@@ -96,4 +96,23 @@ func MatchUsersTypeToUid(c *gin.Context, phoneNumber string) (err error) {
 	err = CheckUserType(c, userType)
 	return err
 
+}
+
+func CheckIfAdminRequest(c *gin.Context) bool {
+	// Get the token claims from the context
+	tokenClaims, exists := c.Get("tokenClaims")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+		return false
+	}
+
+	// Check if the token claims correspond to an admin
+	_, ok := tokenClaims.(SignedAdminDetails)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+		return false
+	}
+
+	// If token claims correspond to an admin, return true
+	return true
 }

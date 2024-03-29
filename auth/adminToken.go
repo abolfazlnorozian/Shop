@@ -2,8 +2,6 @@ package auth
 
 import (
 	"context"
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -24,11 +22,11 @@ var adminCollection *mongo.Collection = database.GetCollection(database.DB, "adm
 
 var SECRET_KEY string = os.Getenv("SECRET_KEY")
 
-type SignedDetails struct {
+type SignedAdminDetails struct {
+	Id       primitive.ObjectID
 	Username string
-	Role     string
-	Uid      string
 	Password string
+	Role     string
 	jwt.StandardClaims
 }
 
@@ -40,35 +38,28 @@ func HashPassword(password string) string {
 	return string(bytes)
 
 }
-func VerifyPasswordSHA1(userPassword string, hashedPassword string) bool {
-	// Compute SHA-1 hash of the user-provided password
-	hashed := sha1.New()
-	hashed.Write([]byte(userPassword))
-	hashedBytes := hashed.Sum(nil)
-	hashedString := hex.EncodeToString(hashedBytes)
 
-	log.Printf("Computed hash: %s\n", hashedString)
-	log.Printf("Stored hashed password: %s\n", hashedPassword)
-
-	// Compare the computed hash with the stored hashed password
-	return hashedString == hashedPassword
+func GenerateBcryptHash(password string) (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedPassword), nil
 }
 
-// func VerifyPassword(userPassword string, providedPassword string) (bool, string) {
-// 	err := bcrypt.CompareHashAndPassword([]byte(providedPassword), []byte(userPassword))
-// 	check := true
-// 	msg := ""
-// 	if err != nil {
-// 		msg = fmt.Sprintf("email of password is incorrect")
-// 		check = false
-// 	}
-// 	return check, msg
+func VerifyAdminPassword(userPassword string, providedPassword string) (bool, string) {
+	err := bcrypt.CompareHashAndPassword([]byte(providedPassword), []byte(userPassword))
+	check := true
+	msg := ""
+	if err != nil {
+		msg = fmt.Sprintf("email of password is incorrect")
+		check = false
+	}
+	return check, msg
 
-// }
+}
 
-func ValidateAdminToken(signedToken string) (claims *SignedDetails, msg string) {
-
-	fmt.Println("Original token:", signedToken)
+func ValidateAdminToken(signedToken string) (claims *SignedAdminDetails, msg string) {
 
 	// Check if the token starts with "bearer "
 	if strings.HasPrefix(signedToken, "bearer ") {
@@ -76,23 +67,28 @@ func ValidateAdminToken(signedToken string) (claims *SignedDetails, msg string) 
 		signedToken = strings.TrimPrefix(signedToken, "bearer ")
 	}
 
-	fmt.Println("Token after prefix removal:", signedToken)
 	token, err := jwt.ParseWithClaims(
 		signedToken,
-		&SignedDetails{},
+		&SignedAdminDetails{},
 		func(token *jwt.Token) (interface{}, error) {
 			return []byte(SECRET_KEY), nil
 
 		},
 	)
+
 	if err != nil {
 		msg = err.Error()
 		return
 	}
-	claims, ok := token.Claims.(*SignedDetails)
+	claims, ok := token.Claims.(*SignedAdminDetails)
 	if !ok {
 		msg = fmt.Sprintf("the token is invalid")
 		msg = err.Error()
+		return
+	}
+
+	if claims.Role != "admin" {
+		msg = fmt.Sprintf("token is not for an admin")
 		return
 	}
 	if claims.ExpiresAt < time.Now().Local().Unix() {
@@ -104,17 +100,19 @@ func ValidateAdminToken(signedToken string) (claims *SignedDetails, msg string) 
 
 }
 
-func GenerateAllTokens(username string, role string, password string) (signedToken string, signedRefreshToken string, err error) {
-	claims := &SignedDetails{
+func GenerateAllTokens(id primitive.ObjectID, username string, role string, password string) (signedToken string, signedRefreshToken string, err error) {
+
+	claims := &SignedAdminDetails{
+		Id:       id,
 		Username: username,
 		Role:     role,
 		Password: password,
-		//Uid:      uid,
+
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(24)).Unix(),
 		},
 	}
-	refreshClaims := &SignedDetails{
+	refreshClaims := &SignedAdminDetails{
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(168)).Unix(),
 		},
@@ -159,3 +157,17 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, role string)
 	return
 
 }
+
+// func VerifyPasswordSHA1(userPassword string, hashedPassword string) bool {
+// 	// Compute SHA-1 hash of the user-provided password
+// 	hashed := sha1.New()
+// 	hashed.Write([]byte(userPassword))
+// 	hashedBytes := hashed.Sum(nil)
+// 	hashedString := hex.EncodeToString(hashedBytes)
+
+// 	log.Printf("Computed hash: %s\n", hashedString)
+// 	log.Printf("Stored hashed password: %s\n", hashedPassword)
+
+// 	// Compare the computed hash with the stored hashed password
+// 	return hashedString == hashedPassword
+// }

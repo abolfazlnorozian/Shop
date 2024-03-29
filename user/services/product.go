@@ -416,6 +416,7 @@ func GetProductsByCategoryId(c *gin.Context) {
 	}
 
 	defer results.Close(ctx)
+
 	var products []entities.Products
 
 	for results.Next(ctx) {
@@ -428,21 +429,6 @@ func GetProductsByCategoryId(c *gin.Context) {
 
 		products = append(products, pro)
 	}
-	// type ByQuantity []entities.Products
-
-	// func (a ByQuantity) Len() int           { return len(a) }
-	// func (a ByQuantity) Less(i, j int) bool {
-	// 	// Move products with zero quantity to the end
-	// 	if a[i].Quantity == 0 && a[j].Quantity != 0 {
-	// 		return false
-	// 	}
-	// 	return true
-	// }
-
-	// func (a ByQuantity) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-
-	// // Sort products based on quantity
-	// sort.Sort(ByQuantity(products))
 
 	// Calculate total number of pages based on the limit
 	totalPages := int(math.Ceil(float64(totalDocs) / float64(limit)))
@@ -647,133 +633,8 @@ func GetProductsByOnlyExists(c *gin.Context) {
 // @Param limit query integer false "Number of items per page (default is 40)"
 // @Success 200 {object} response.GetProductByOneField
 // @Router /api/products/ [get]
-// func GetProductByCategory(c *gin.Context) {
-// 	// Set a default filter to fetch all products
-// 	filter := bson.M{}
-
-// 	// If not all documents are requested, apply additional filter conditions
-// 	categoryName := c.DefaultQuery("category", "")
-// 	if categoryName != "" {
-// 		// Lookup the category by slug
-// 		var category entities.Category
-// 		err := categoryCollection.FindOne(context.Background(), bson.M{"slug": categoryName}).Decode(&category)
-// 		if err != nil {
-// 			c.JSON(http.StatusNotFound, gin.H{"message": "Category not found"})
-// 			return
-// 		}
-
-// 		categoryIDs, err := searchChildrenIDs(*category.ID)
-// 		if err != nil {
-// 			c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
-// 		}
-
-// 		if categoryIDs != nil {
-// 			var categoryID []string
-// 			for _, catID := range categoryIDs {
-// 				categoryID = append(categoryID, catID.ID.Hex())
-// 			}
-
-// 			filter["categoryId"] = bson.M{"$in": categoryID}
-// 		} else {
-// 			filter["categoryId"] = category.ID.Hex()
-// 		}
-// 	}
-
-// 	// Pagination parameters from the query
-// 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-// 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "40"))
-
-// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 	defer cancel()
-
-// 	// Calculate skip value for pagination
-// 	skip := (page - 1) * limit
-
-// 	// Calculate total number of documents in the collection
-// 	totalDocs, err := proCollection.CountDocuments(ctx, filter)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to count products"})
-// 		return
-// 	}
-
-// 	// MongoDB sort option to sort by existence field (ascending)
-// 	sortOptions := bson.D{{"NotExist", 1}} // 1 for ascending order
-
-// 	results, err := proCollection.Find(ctx, filter, options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)).SetSort(sortOptions))
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error finding products"})
-// 		return
-// 	}
-// 	defer results.Close(ctx)
-
-// 	var products []entities.Products
-// 	for results.Next(ctx) {
-// 		var pro entities.Products
-// 		err := results.Decode(&pro)
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-// 			return
-// 		}
-// 		products = append(products, pro)
-// 	}
-
-// 	// Calculate total number of pages based on the limit
-// 	totalPages := int(math.Ceil(float64(totalDocs) / float64(limit)))
-
-// 	// Determine if there are previous and next pages
-// 	hasPrevPage := page > 1
-// 	hasNextPage := page < totalPages
-
-// 	// Prepare the custom response with selected fields
-// 	var customProducts []gin.H
-// 	for _, product := range products {
-// 		customProduct := gin.H{
-// 			"_id":             product.ID,
-// 			"notExist":        product.NotExist,
-// 			"amazing":         product.Amazing,
-// 			"productType":     product.ProductType,
-// 			"images":          product.Images,
-// 			"name":            product.Name,
-// 			"price":           product.Price,
-// 			"discountPercent": product.DiscountPercent,
-// 			"stock":           product.Stock,
-// 			"slug":            product.Slug,
-// 			"variations":      product.Variations,
-// 			"salesNumber":     product.SalesNumber,
-// 			"bannerUrl":       product.BannerUrl,
-// 		}
-// 		customProducts = append(customProducts, customProduct)
-// 	}
-
-// 	// Prepare the response with custom products and pagination information
-// 	response := gin.H{
-// 		"docs":          customProducts,
-// 		"totalDocs":     totalDocs,
-// 		"limit":         limit,
-// 		"totalPages":    totalPages,
-// 		"page":          page,
-// 		"pagingCounter": skip + 1,
-// 		"hasPrevPage":   hasPrevPage,
-// 		"hasNextPage":   hasNextPage,
-// 	}
-
-// 	// Set prevPage and nextPage values based on the current page
-// 	if hasPrevPage {
-// 		response["prevPage"] = page - 1
-// 	} else {
-// 		response["prevPage"] = nil
-// 	}
-
-// 	if hasNextPage {
-// 		response["nextPage"] = page + 1
-// 	} else {
-// 		response["nextPage"] = nil
-// 	}
-
-// 	c.JSON(http.StatusOK, response)
-// }
-
 func GetProductByCategory(c *gin.Context) {
+	//*********************
 	// Set a default filter to fetch all products
 	filter := bson.M{}
 
@@ -846,7 +707,7 @@ func GetProductByCategory(c *gin.Context) {
 
 		hasQuantity := false
 		for _, p := range pro.Variations {
-			if p.Quantity != 0 {
+			if p.Quantity != 0 && len(pro.Variations) != 0 {
 				hasQuantity = true
 				break
 			}
@@ -1010,8 +871,80 @@ func GetMixProducts(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "mix_products", "body": mixProducts})
 
 }
+
+// func PostMixesProduct(c *gin.Context) {
+// 	var mix entities.Mixes
+
+// 	tokenClaims, exists := c.Get("tokenClaims")
+
+// 	if !exists {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+// 		return
+// 	}
+
+// 	claims, ok := tokenClaims.(*auth.SignedUserDetails)
+// 	if !ok {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+// 		return
+// 	}
+
+// 	userId := claims.Id
+// 	username := claims.Username
+// 	if err := c.ShouldBindJSON(&mix); err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+// 	mix.ID = primitive.NewObjectID()
+// 	mix.UserId = userId
+// 	mix.CreatedAt = time.Now()
+// 	mix.UpdatedAt = time.Now()
+// 	_, err := mixesCollection.InsertOne(c, mix)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	// Check if a document with the username already exists in cartCollection
+// 	filter := bson.M{"username": username}
+// 	var existingDoc entities.Catrs
+// 	err = cartCollection.FindOne(c, filter).Decode(&existingDoc)
+// 	if err == nil {
+// 		// If document exists, update it with the new mix
+// 		update := bson.M{"$set": bson.M{"mix": mix.ID}}
+// 		_, err := cartCollection.UpdateOne(c, filter, update)
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+// 			return
+// 		}
+// 	} else {
+// 		// If document does not exist, create a new one
+// 		var cart entities.Catrs
+// 		cart.Id = primitive.NewObjectID()
+// 		cart.Status = "active"
+// 		cart.UserName = username
+// 		cart.Mix = mix.ID
+// 		cart.CreatedAt = time.Now()
+// 		cart.UpdatedAt = time.Now()
+
+// 		// Initialize Products field if nil
+// 		if cart.Products == nil {
+// 			cart.Products = make([]entities.ComeProduct, 0)
+// 		}
+
+// 		// Insert the new document into the database
+// 		_, err := cartCollection.InsertOne(c, cart)
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+// 			return
+// 		}
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "mix"})
+// 	c.JSON(http.StatusNoContent, gin.H{})
+// }
+
 func PostMixesProduct(c *gin.Context) {
-	var mix entities.Mixes
+	var mixes []entities.Mixes
 
 	tokenClaims, exists := c.Get("tokenClaims")
 
@@ -1028,52 +961,59 @@ func PostMixesProduct(c *gin.Context) {
 
 	userId := claims.Id
 	username := claims.Username
-	if err := c.ShouldBindJSON(&mix); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	mix.ID = primitive.NewObjectID()
-	mix.UserId = userId
-	mix.CreatedAt = time.Now()
-	mix.UpdatedAt = time.Now()
-	_, err := mixesCollection.InsertOne(c, mix)
-	if err != nil {
+
+	if err := c.ShouldBindJSON(&mixes); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Check if a document with the username already exists in cartCollection
-	filter := bson.M{"username": username}
-	var existingDoc entities.Catrs
-	err = cartCollection.FindOne(c, filter).Decode(&existingDoc)
-	if err == nil {
-		// If document exists, update it with the new mix
-		update := bson.M{"$set": bson.M{"mix": mix.ID}}
-		_, err := cartCollection.UpdateOne(c, filter, update)
+	for _, mix := range mixes {
+		mix.ID = primitive.NewObjectID()
+		mix.UserId = userId
+		mix.CreatedAt = time.Now()
+		mix.UpdatedAt = time.Now()
+
+		_, err := mixesCollection.InsertOne(c, mix)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-	} else {
-		// If document does not exist, create a new one
-		var cart entities.Catrs
-		cart.Id = primitive.NewObjectID()
-		cart.Status = "active"
-		cart.UserName = username
-		cart.Mix = mix.ID
-		cart.CreatedAt = time.Now()
-		cart.UpdatedAt = time.Now()
 
-		// Initialize Products field if nil
-		if cart.Products == nil {
-			cart.Products = make([]entities.ComeProduct, 0)
-		}
+		// Append the mix ID to the mixIDs slice
+		mixIDs := []primitive.ObjectID{mix.ID}
 
-		// Insert the new document into the database
-		_, err := cartCollection.InsertOne(c, cart)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-			return
+		filter := bson.M{"username": username}
+		var existingDoc entities.Catrs
+		err = cartCollection.FindOne(c, filter).Decode(&existingDoc)
+		if err == nil {
+			// If document exists, update it with the new mix
+			update := bson.M{"$push": bson.M{"mix": bson.M{"$each": mixIDs}}}
+			_, err := cartCollection.UpdateOne(c, filter, update)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+				return
+			}
+		} else {
+			// If document does not exist, create a new one
+			var cart entities.Catrs
+			cart.Id = primitive.NewObjectID()
+			cart.Status = "active"
+			cart.UserName = username
+			cart.Mix = mixIDs
+			cart.CreatedAt = time.Now()
+			cart.UpdatedAt = time.Now()
+
+			// Initialize Products field if nil
+			if cart.Products == nil {
+				cart.Products = make([]entities.ComeProduct, 0)
+			}
+
+			// Insert the new document into the database
+			_, err := cartCollection.InsertOne(c, cart)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+				return
+			}
 		}
 	}
 
@@ -1104,15 +1044,53 @@ func DeleteMixofCart(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
 		return
 	}
+	username := claims.Username
 
-	// Delete the mix from the cart collection
-	filter := bson.M{"username": claims.Username, "mix": objectID}
-	update := bson.M{"$unset": bson.M{"mix": ""}}
-	_, err = cartCollection.UpdateOne(c, filter, update)
+	filter := bson.M{"username": username}
+	var existingDoc entities.Catrs
+	err = cartCollection.FindOne(c, filter).Decode(&existingDoc)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete mix from cart"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
+
+	// Check if the mix ID is in the mix array
+	var mixIndexToDelete = -1
+	for i, mixID := range existingDoc.Mix {
+		if mixID == objectID {
+			mixIndexToDelete = i
+			break
+		}
+	}
+
+	// If mix ID is found in the mix array, remove it
+	if mixIndexToDelete != -1 {
+		existingDoc.Mix = append(existingDoc.Mix[:mixIndexToDelete], existingDoc.Mix[mixIndexToDelete+1:]...)
+
+		// Update the existing document in the database
+		update := bson.M{"$set": bson.M{
+			"mix":       existingDoc.Mix,
+			"updatedAt": time.Now(),
+		}}
+		_, err = cartCollection.UpdateOne(c, filter, update)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+
+		// c.JSON(http.StatusCreated, gin.H{"message": "cart_edited", "success": true, "body": gin.H{}})
+		// c.JSON(http.StatusNoContent, gin.H{})
+		// return
+	}
+
+	// // Delete the mix from the cart collection
+	// filter := bson.M{"username": claims.Username, "mix": objectID}
+	// update := bson.M{"$unset": bson.M{"mix": ""}}
+	// _, err = cartCollection.UpdateOne(c, filter, update)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete mix from cart"})
+	// 	return
+	// }
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "mix_deleted"})
 }
@@ -1146,6 +1124,17 @@ func AddProduct() gin.HandlerFunc {
 		c.JSON(http.StatusCreated, gin.H{"message": pro})
 
 	}
+}
+func GetAllCountProducts(c *gin.Context) {
+	var products int64
+	count, err := proCollection.CountDocuments(c, bson.M{})
+	if err != nil {
+		// Handle error
+		return
+	}
+	products = count
+
+	c.JSON(http.StatusOK, gin.H{"count": products})
 }
 
 // func GetProductsByField(c *gin.Context) {

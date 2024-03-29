@@ -9,8 +9,8 @@ package router
 
 import (
 	"shop/auth"
-	"shop/services"
 	"shop/upload"
+	"shop/user/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,22 +19,26 @@ func ProRouter(r *gin.RouterGroup) {
 	pro := r.Group("/")
 
 	userAuth := r.Group("/")
-	adminAuth := r.Group("/")
 
-	adminAuth.Use(auth.AdminAuthenticate())
 	userAuth.Use(auth.UserAuthenticate)
 
-	adminAuth.POST("/addproduct", services.AddProduct())
+	// adminAuth.POST("/addproduct", services.AddProduct())
 
 	pro.GET("/products/:slug", services.GetProductBySlug)
 
 	pro.GET("/products", services.GetProductsByFields)
 	pro.GET("/products/", services.GetProductByCategory)
+
 	pro.GET("/mix-products", services.GetMixProducts)
 	userAuth.POST("/mix", services.PostMixesProduct)
 	userAuth.OPTIONS("/mix", services.PostMixesProduct)
 	userAuth.DELETE("/mix/:id", services.DeleteMixofCart)
 	userAuth.OPTIONS("/mix/:id", services.DeleteMixofCart)
+	pro.GET("/products/count", services.GetAllCountProducts)
+	// p := r.Group("/")
+	// p.Use(auth.AdminAuthenticate())
+	// p.GET("/products/", service.GetAllProductsByAdmin)
+	// p.OPTIONS("/products/", service.GetAllProductsByAdmin)
 
 }
 
@@ -50,22 +54,15 @@ func CategoryRouter(r *gin.RouterGroup) {
 	ca.Use(auth.AdminAuthenticate())
 	c.GET("/categories", services.FindAllCategories)
 	// c.OPTIONS("/categories", services.FindAllCategories)
-	ca.POST("/add", services.AddCategories)
+	// ca.POST("/add", services.AddCategories)
 	c.GET("/categories/:slug", services.GetOneGategory)
 	c.GET("/categories/undefined", services.UndefindProduct)
 }
 
-func AdminRoutes(r *gin.RouterGroup) {
-	u := r.Group("/admin")
-	// u.Use(auth.AdminAuthenticate())
-	// u.POST("/createdAdmin", services.RegisterAdmins)
-	u.POST("/login", services.LoginAdmin)
-}
 func Uploader(r *gin.RouterGroup) {
 
 	up := r.Group("/admin")
 	up.Use(auth.AdminAuthenticate())
-	up.POST("/upload", upload.Uploadpath)
 
 	up.GET("/downloads", upload.FindAllImages)
 
@@ -98,6 +95,7 @@ func UserRoute(r *gin.RouterGroup) {
 	authUser.OPTIONS("/users/addresses", services.GetAddresses)
 	authUser.DELETE("/users/addresses/:id", services.DeleteAddressByID)
 	authUser.OPTIONS("/users/addresses/:id", services.DeleteAddressByID)
+	us.GET("/count", services.GetAllCountUsers)
 
 }
 func OrderRouter(r *gin.RouterGroup) {
@@ -117,6 +115,7 @@ func OrderRouter(r *gin.RouterGroup) {
 	// ordr.OPTIONS("/orders/checkout", services.OptionsOrers)
 
 	or.GET("/users/orders/checkout/verify", services.BackPayment)
+	or.GET("/users/orders/count", services.GetAllOrders)
 
 }
 
@@ -144,11 +143,7 @@ func CartRouter(r *gin.RouterGroup) {
 	//ca.OPTIONS("/carts", services.GetCarts)
 
 	// ca.DELETE("/carts/:id", services.DeleteCart)
-	ca.DELETE("/carts", services.DeleteCart)
-
-	// mix.DELETE("/mix", services.DeleteMixofCart)
-	// mix.OPTIONS("/mix", services.DeleteMixofCart)
-	//ca.OPTIONS("/carts/", services.DeleteCart)
+	ca.DELETE("/carts", services.DeleteProductFromCart)
 
 }
 
@@ -191,3 +186,9 @@ func FavoriteRoute(r *gin.RouterGroup) {
 
 	b.DELETE("/users/favorites/:productID", services.DeleteFavorites)
 }
+func ApiGh(r *gin.RouterGroup) {
+	a := r.Group("/")
+	a.GET("/", services.ApiGhahvedark)
+}
+
+//****************************************************************************************************

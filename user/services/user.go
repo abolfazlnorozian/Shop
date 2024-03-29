@@ -20,7 +20,8 @@ import (
 )
 
 var usersCollection *mongo.Collection = database.GetCollection(database.DB, "users")
-var validates = validator.New()
+
+var validate = validator.New()
 
 // @Summary Register User
 // @Description Register user by phoneNumber and send SMS verification code
@@ -426,4 +427,20 @@ func GetUserByToken(c *gin.Context) {
 
 	c.JSON(http.StatusOK, jsonResponse)
 	c.JSON(http.StatusNoContent, gin.H{})
+}
+
+func ApiGhahvedark(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message:": "GHahvedark API"})
+}
+
+func GetAllCountUsers(c *gin.Context) {
+	var users int64
+	count, err := usersCollection.CountDocuments(c, bson.M{})
+	if err != nil {
+		// Handle error
+		return
+	}
+	users = count
+
+	c.JSON(http.StatusOK, gin.H{"count": users})
 }

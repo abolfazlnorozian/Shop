@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"net/http"
-	"shop/auth"
 	"shop/database"
 	"shop/entities"
 	"time"
@@ -98,32 +97,32 @@ func findById(root *entities.Response, id interface{}) *entities.Response {
 	return nil
 }
 
-func AddCategories(c *gin.Context) {
+// func AddCategories(c *gin.Context) {
 
-	var title entities.Category
+// 	var title entities.Category
 
-	if err := c.ShouldBindJSON(&title); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if err := auth.CheckUserType(c, "admin"); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	if validationErr := validate.Struct(&title); validationErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
-		return
-	}
+// 	if err := c.ShouldBindJSON(&title); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+// 	if err := auth.CheckUserType(c, "admin"); err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+// 	if validationErr := validate.Struct(&title); validationErr != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+// 		return
+// 	}
 
-	_, err := categoryCollection.InsertOne(c, title)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+// 	_, err := categoryCollection.InsertOne(c, title)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": title})
+// 	c.JSON(http.StatusOK, gin.H{"message": title})
 
-}
+// }
 func GetOneGategory(c *gin.Context) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
