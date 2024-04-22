@@ -54,10 +54,11 @@ func main() {
 	// corsConfig.AllowOrigins = []string{os.Getenv("CORS_DOMAIN")}
 	// corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	// r.Use(cors.New(corsConfig))
+
 	router.ApiGh(v2)
 	router.ProRouter(v1)
 	router.CategoryRouter(v1)
-	router.Uploader(v1)
+	// router.Uploader(v1)
 	router.Downloader(v2)
 	router.UserRoute(v1)
 	router.OrderRouter(v1)
@@ -75,6 +76,12 @@ func main() {
 	adminroute.AdminBrandRoute(v1)
 	adminroute.AdminProductRoute(v1)
 	adminroute.Comments(v1)
+	// adminroute.UserRouteByAdmin(v1)
+	adminroute.PropertiesByAdmin(v1)
+	adminroute.ImageRouteByAdmin(v1)
+	adminroute.PageRouteByAdmin(v1)
+	adminroute.OrderRouteByAdmin(v1)
+	adminroute.CouponRoutesByAdmin(v1)
 
 	go func() {
 		database.MD()
@@ -85,7 +92,7 @@ func main() {
 	r.Use(func(c *gin.Context) {
 		if c.Request.URL.Path == "/swagger/doc.json" {
 			// Handle /swagger/doc.json separately if needed
-			c.File("/home/abolfazl/src/shop/docs/swagger.json")
+			c.File("./docs/swagger.json")
 			c.Abort()
 			return
 		}

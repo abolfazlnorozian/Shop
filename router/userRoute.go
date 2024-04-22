@@ -9,7 +9,6 @@ package router
 
 import (
 	"shop/auth"
-	"shop/upload"
 	"shop/user/services"
 
 	"github.com/gin-gonic/gin"
@@ -19,26 +18,20 @@ func ProRouter(r *gin.RouterGroup) {
 	pro := r.Group("/")
 
 	userAuth := r.Group("/")
-
 	userAuth.Use(auth.UserAuthenticate)
 
 	// adminAuth.POST("/addproduct", services.AddProduct())
-
-	pro.GET("/products/:slug", services.GetProductBySlug)
+	// adminAuth.GET("/products", service.GetAllProductsByAdmin)
 
 	pro.GET("/products", services.GetProductsByFields)
 	pro.GET("/products/", services.GetProductByCategory)
-
+	pro.GET("/products/:slug", services.GetProductBySlug)
 	pro.GET("/mix-products", services.GetMixProducts)
 	userAuth.POST("/mix", services.PostMixesProduct)
 	userAuth.OPTIONS("/mix", services.PostMixesProduct)
 	userAuth.DELETE("/mix/:id", services.DeleteMixofCart)
 	userAuth.OPTIONS("/mix/:id", services.DeleteMixofCart)
 	pro.GET("/products/count", services.GetAllCountProducts)
-	// p := r.Group("/")
-	// p.Use(auth.AdminAuthenticate())
-	// p.GET("/products/", service.GetAllProductsByAdmin)
-	// p.OPTIONS("/products/", service.GetAllProductsByAdmin)
 
 }
 
@@ -50,8 +43,7 @@ func ProRouter(r *gin.RouterGroup) {
 
 func CategoryRouter(r *gin.RouterGroup) {
 	c := r.Group("/")
-	ca := r.Group("/")
-	ca.Use(auth.AdminAuthenticate())
+
 	c.GET("/categories", services.FindAllCategories)
 	// c.OPTIONS("/categories", services.FindAllCategories)
 	// ca.POST("/add", services.AddCategories)
@@ -59,14 +51,14 @@ func CategoryRouter(r *gin.RouterGroup) {
 	c.GET("/categories/undefined", services.UndefindProduct)
 }
 
-func Uploader(r *gin.RouterGroup) {
+// func Uploader(r *gin.RouterGroup) {
 
-	up := r.Group("/admin")
-	up.Use(auth.AdminAuthenticate())
+// 	up := r.Group("/admin")
+// 	up.Use(auth.AdminAuthenticate())
 
-	up.GET("/downloads", upload.FindAllImages)
+// 	up.GET("/downloads", upload.FindAllImages)
 
-}
+// }
 func Downloader(r *gin.RouterGroup) {
 	down := r.Group("/")
 	down.Static("/uploads", "./public/images")
@@ -76,7 +68,7 @@ func Downloader(r *gin.RouterGroup) {
 
 func UserRoute(r *gin.RouterGroup) {
 	us := r.Group("/users")
-	//us.Use(auth.UserAuthenticate())
+
 	authUser := r.Group("/")
 	authUser.Use(auth.UserAuthenticate)
 	authAdmin := r.Group("/")
@@ -86,10 +78,11 @@ func UserRoute(r *gin.RouterGroup) {
 	us.POST("/auth/login", services.LoginUsers)
 	us.OPTIONS("/auth/login", services.LoginUsers)
 	authAdmin.GET("/users2", services.GetAllUsers)
-	authUser.PUT("/users/", services.UpdatedUser)
-	authUser.OPTIONS("/users/", services.UpdatedUser)
 	authUser.GET("/users", services.GetUserByToken)
 	authUser.OPTIONS("/users", services.GetUserByToken)
+	authUser.PUT("/users/", services.UpdatedUser)
+	authUser.OPTIONS("/users/", services.UpdatedUser)
+
 	authUser.POST("/users/addresses", services.PostAddresses)
 	authUser.GET("/users/addresses", services.GetAddresses)
 	authUser.OPTIONS("/users/addresses", services.GetAddresses)

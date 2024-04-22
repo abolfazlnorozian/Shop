@@ -24,8 +24,8 @@ type Users struct {
 	CountGetSmsInDay    int                   `json:"countGetSmsInDay" bson:"countGetSmsInDay"`
 	Email               string                `json:"email,omitempty" bson:"email,omitempty"`
 	LastName            string                `json:"lastname" bson:"lastname"`
-	Name                string                `json:"name" bson:"name"`
-	BirthDate           string                `json:"birthDate" bson:"birthDate"`
+	Name                string                `json:"namebirthDate" bson:"name"`
+	BirthDate           string                `json:"" bson:"birthDate"`
 }
 
 type Addr struct {

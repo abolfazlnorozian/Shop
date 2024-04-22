@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -1404,7 +1403,7 @@ func SendToZarinpal(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	fmt.Println("respons:", requestResponse)
+	// fmt.Println("respons:", requestResponse)
 
 	if requestResponse.Status == 100 {
 		_, err := ordersCollection.UpdateOne(c,
@@ -1420,6 +1419,7 @@ func SendToZarinpal(c *gin.Context) {
 
 		return
 	} else {
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Payment request failed"})
 
 		return
@@ -1431,6 +1431,7 @@ func BackPayment(c *gin.Context) {
 	var orderData entities.Order
 	var user entities.Users
 	authority := c.Query("Authority")
+	// baseURL := os.Getenv("BASE_URL")
 
 	err := ordersCollection.FindOne(c, bson.M{"paymentId": authority}).Decode(&orderData)
 	if err != nil {
@@ -1483,7 +1484,7 @@ func BackPayment(c *gin.Context) {
 
 		// c.JSON(http.StatusOK, gin.H{"status": "success"})
 	} else {
-
+		// c.Redirect(http.StatusNotFound, baseURL)
 		_, err := ordersCollection.UpdateOne(c,
 			bson.M{"paymentId": authority},
 			bson.M{"$set": bson.M{"paymentStatus": "unpaid"}},
