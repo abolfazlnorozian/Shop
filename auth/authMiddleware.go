@@ -10,7 +10,7 @@ import (
 
 func AdminAuthenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		adminToken := c.Request.Header.Get("token")
+		adminToken := c.Request.Header.Get("Authorization")
 		if adminToken == "" {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("no Authorization header provided")})
 			c.Abort()

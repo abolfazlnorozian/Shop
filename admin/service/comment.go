@@ -7,9 +7,11 @@ import (
 	"shop/database"
 	"shop/entities"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -132,5 +134,140 @@ func GetCommentByAdmin(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+
+}
+func CommentGetProductByIDByAdmin(c *gin.Context) {
+	tokenClaims, exists := c.Get("tokenClaims")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+		return
+	}
+
+	_, ok := tokenClaims.(*auth.SignedAdminDetails)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+		return
+	}
+
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error1": "Invalid 'id' parameter"})
+		return
+	}
+
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid 'id' parameter"})
+		return
+	}
+
+	// Define a filter to find the product based on productId
+	filter := bson.M{"_id": objectID}
+
+	// Perform the query to find the product in the product collection
+	var product entities.Products
+	err = proCollection.FindOne(c, filter).Decode(&product)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error1": err.Error()})
+		return
+	}
+
+	// If the product is found, return it as JSON response
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "product", "body": product})
+}
+
+func UpdateCommentByAdmin(c *gin.Context) {
+	tokenClaims, exists := c.Get("tokenClaims")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+		return
+	}
+
+	_, ok := tokenClaims.(*auth.SignedAdminDetails)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+		return
+	}
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error1": "Invalid 'id' parameter"})
+		return
+	}
+
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid 'id' parameter"})
+		return
+	}
+
+	// Define a filter to find the product based on productId
+	filter := bson.M{"_id": objectID}
+	updateFields := make(map[string]interface{})
+
+	// Extract fields to update from request JSON
+	if err := c.ShouldBindJSON(&updateFields); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Set the updatedAt field to the current time
+	updateFields["updatedAt"] = time.Now()
+
+	// Construct the update query
+	updateQuery := bson.M{"$set": updateFields}
+
+	// page.CreatedAt = time.Now()
+	// page.UpdatedAt = time.Now()
+
+	// _, err = pagesCollection.UpdateOne(c, filter, bson.M{
+	// 	"$set": bson.M{
+	// 		"meta":      page.Meta,
+	// 		"mode":      page.Mode,
+	// 		"rows":      page.Rows,
+	// 		"url":       page.Url,
+	// 		"creayedAt": page.CreatedAt,
+	// 		"updatedAt": page.UpdatedAt,
+	// 		"__v":       page.V,
+	// 	},
+	// })
+	_, err = commentCollection.UpdateOne(c, filter, updateQuery)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error2": err.Error()})
+		return
+	}
+	// var comment entities.Comments
+
+	// comment.CreatedAt = time.Now()
+	// comment.UpdatedAt = time.Now()
+	// err = c.ShouldBindJSON(&comment)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	// 	return
+	// }
+
+	// _, err = commentCollection.UpdateOne(c, filter, bson.M{
+	// 	"$set": bson.M{
+	// 		// "_id":       comment.Id,
+	// 		"buyOffer":  comment.BuyOffer,
+	// 		"isActive":  comment.IsActive,
+	// 		"title":     comment.Title,
+	// 		"text":      comment.Text,
+	// 		"rate":      comment.Rate,
+	// 		"productId": comment.ProductId,
+	// 		"userId":    comment.UserId,
+	// 		"createdAt": comment.CreatedAt,
+	// 		"updatedAt": comment.UpdatedAt,
+	// 		"__v":       comment.V,
+	// 	},
+	// })
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error4": err.Error()})
+	// 	return
+	// }
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "comment_updated", "body": gin.H{}})
 
 }

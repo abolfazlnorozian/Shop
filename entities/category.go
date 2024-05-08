@@ -19,10 +19,10 @@ type Image struct {
 	Url string `json:"url" bson:"url"`
 }
 type NewFaq struct {
-	ID       primitive.ObjectID `json:"_id" bson:"_id,omitempty"`
-	Answer   string             `json:"answer" bson:"answer"`
-	Complete bool               `json:"completed" bson:"completed"`
-	Question string             `json:"question" bson:"question"`
+	ID       *primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	Answer   string              `json:"answer" bson:"answer"`
+	Complete bool                `json:"completed" bson:"completed"`
+	Question string              `json:"question" bson:"question"`
 }
 type Ancestor struct {
 	ID   primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`

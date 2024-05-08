@@ -188,6 +188,7 @@ func DeleteCategoryByAdmin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "category_deleted", "body": gin.H{}})
 
 }
+
 func UpdateCategoryByAdmin(c *gin.Context) {
 	id := c.Param("id")
 	objectID, err := primitive.ObjectIDFromHex(id)
@@ -195,6 +196,7 @@ func UpdateCategoryByAdmin(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid 'id' parameter"})
 		return
 	}
+
 	tokenClaims, exists := c.Get("tokenClaims")
 	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
@@ -206,26 +208,43 @@ func UpdateCategoryByAdmin(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
 		return
 	}
+
+	// Validate admin permissions here if needed
+
 	filter := bson.M{"_id": objectID}
 	var category entities.Category
 	err = categoryCollection.FindOne(c, filter).Decode(&category)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find category", "message": err.Error()})
 		return
 	}
-	err = c.ShouldBindJSON(&category)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error1": err.Error()})
+
+	// Bind JSON data to category struct
+	if err := c.ShouldBindJSON(&category); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format", "message": err.Error()})
 		return
 	}
+	for i := range category.Faq {
+		if category.Faq[i].ID == nil {
+			newID := primitive.NewObjectID()
+			category.Faq[i].ID = &newID
+		}
+		// Set Complete to true if question and answer are provided
+		if category.Faq[i].Question != "" && category.Faq[i].Answer != "" {
+			category.Faq[i].Complete = true
+		} else {
+			category.Faq[i].Complete = false
+		}
+	}
+
 	update := bson.M{}
-	if len(category.Faq) > 0 {
-		update["faq"] = category.Faq
-	}
-	_, err = categoryCollection.UpdateOne(c, bson.M{"_id": filter}, bson.M{"$set": update})
+	update["faq"] = category.Faq
+
+	_, err = categoryCollection.UpdateOne(c, filter, bson.M{"$set": update})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error2": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update category", "message": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "category_updated", "body": gin.H{}})
 }

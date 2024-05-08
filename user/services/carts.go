@@ -187,6 +187,135 @@ func GetNumberOfKeys(productId primitive.ObjectID) (int, error) {
 //@Param Authorization header string true "authorization" format("Bearer your_actual_token_here")
 //@Success 201 "Success"
 //@Router /api/users/carts [get]
+// func GetCarts(c *gin.Context) {
+// 	var products []map[string]interface{} // Combined product structure
+
+// 	tokenClaims, exists := c.Get("tokenClaims")
+// 	if !exists {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token claims not found in context"})
+// 		return
+// 	}
+
+// 	claims, ok := tokenClaims.(*auth.SignedUserDetails)
+// 	if !ok {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims type"})
+// 		return
+// 	}
+
+// 	username := claims.Username
+
+// 	cur, err := cartCollection.Find(c, bson.M{"username": username})
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error23": "Failed to fetch carts", "details": err.Error()})
+// 		return
+// 	}
+// 	defer cur.Close(c)
+
+// 	var cartNotFound bool = true
+
+// 	for cur.Next(c) {
+// 		var cart entities.Catrs
+// 		if err := cur.Decode(&cart); err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode cart", "details": err.Error()})
+// 			return
+// 		}
+// 		if len(cart.Products) == 0 && cart.Mix == nil {
+// 			// Cart is empty, return empty cart response
+// 			c.JSON(http.StatusCreated, gin.H{
+// 				"success": true,
+// 				"message": "cart",
+// 				"body":    []map[string]interface{}{},
+// 			})
+// 			return
+// 		}
+
+// 		cartNotFound = false
+// 		if cart.Mix == nil {
+// 			// Handle cart with only products
+// 			// Your existing logic for handling products goes here
+// 		} else {
+// 			// Handle cart with mixes
+// 			var mixes []entities.Mixes
+// 			switch v := cart.Mix.(type) {
+// 			case primitive.ObjectID:
+// 				// cart.Mix is a single ObjectID, fetch the mix document
+// 				var mix entities.Mixes
+// 				err := mixesCollection.FindOne(c, bson.M{"_id": v}).Decode(&mix)
+// 				if err != nil {
+// 					c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find mix", "details": err.Error()})
+// 					return
+// 				}
+// 				mixes = append(mixes, mix)
+// 			case []primitive.ObjectID:
+// 				// cart.Mix is an array of ObjectIDs, fetch mix documents for each mix ID
+// 				for _, mixID := range v {
+// 					var mix entities.Mixes
+// 					err := mixesCollection.FindOne(c, bson.M{"_id": mixID}).Decode(&mix)
+// 					if err != nil {
+// 						c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find mix", "details": err.Error()})
+// 						return
+// 					}
+// 					mixes = append(mixes, mix)
+// 				}
+// 			default:
+// 				// cart.Mix has an invalid type
+// 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid mix field type"})
+// 				return
+// 			}
+
+// 			// Handle mix products
+// 			for _, mix := range mixes {
+// 				// Fetch mix products for the current mix
+// 				cur, err := mixProductCollection.Find(c, bson.M{"_id": bson.M{"$in": mix.Products}})
+// 				if err != nil {
+// 					c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find mix products", "details": err.Error()})
+// 					return
+// 				}
+// 				defer cur.Close(c)
+
+// 				var mixProducts []entities.MixProducts
+
+// 				// Iterate through the cursor to decode each mix product
+// 				for cur.Next(c) {
+// 					var mixProduct entities.MixProducts
+// 					if err := cur.Decode(&mixProduct); err != nil {
+// 						c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to decode mix product", "details": err.Error()})
+// 						return
+// 					}
+// 					// Append the mix product to the mixProducts slice
+// 					mixProducts = append(mixProducts, mixProduct)
+// 				}
+// 				if err := cur.Err(); err != nil {
+// 					c.JSON(http.StatusInternalServerError, gin.H{"error": "cursor error", "details": err.Error()})
+// 					return
+// 				}
+
+// 				// Append the mix data along with its products to the products slice
+// 				products = append(products, map[string]interface{}{
+// 					"variations":  []interface{}{}, // Initialize variations as an empty array
+// 					"mixproducts": mixProducts,     // Include mix products for mix entries
+// 					"mix":         mix,             // Include mix data for mix entries
+// 				})
+// 			}
+// 		}
+// 	}
+
+// 	if cartNotFound {
+// 		// User has an empty cart
+// 		emptyCartResponse := gin.H{
+// 			"success": true,
+// 			"message": "cart",
+// 			"body":    []map[string]interface{}{},
+// 		}
+// 		c.JSON(http.StatusCreated, emptyCartResponse)
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "cart", "body": products})
+// 	c.JSON(http.StatusNoContent, gin.H{})
+// }
+
+//************************************************************************************************************8
 func GetCarts(c *gin.Context) {
 	var products []map[string]interface{} // Combined product structure
 
@@ -214,12 +343,12 @@ func GetCarts(c *gin.Context) {
 	var cartNotFound bool = true
 
 	for cur.Next(c) {
-		var cart entities.Catrs
+		var cart entities.Catrs2
 		if err := cur.Decode(&cart); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode cart", "details": err.Error()})
 			return
 		}
-		if len(cart.Products) == 0 && len(cart.Mix) == 0 {
+		if len(cart.Products) == 0 && cart.Mix == nil {
 			// Cart is empty, return empty cart response
 			c.JSON(http.StatusCreated, gin.H{
 				"success": true,
@@ -236,7 +365,7 @@ func GetCarts(c *gin.Context) {
 		}
 
 		cartNotFound = false
-		if len(cart.Mix) == 0 {
+		if cart.Mix == nil {
 			for _, product := range cart.Products {
 				// Fetch detailed product information from your data source (e.g., database)
 				var retrievedProduct entities.Products
@@ -343,17 +472,45 @@ func GetCarts(c *gin.Context) {
 			}
 		} else if len(cart.Products) == 0 {
 			var mixes []entities.Mixes
-			for _, mixID := range cart.Mix {
-				var mix entities.Mixes
-
-				// Find the mix document by its ID
-				err := mixesCollection.FindOne(c, bson.M{"_id": mixID}).Decode(&mix)
-				if err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find mix", "details": err.Error()})
+			if cart.Mix != nil {
+				// Check if cart.Mix is an array of ObjectIDs
+				if mixIDs, ok := cart.Mix.([]primitive.ObjectID); ok {
+					// cart.Mix is an array, fetch mix documents for each mix ID
+					for _, mixID := range mixIDs {
+						var mix entities.Mixes
+						err := mixesCollection.FindOne(c, bson.M{"_id": mixID}).Decode(&mix)
+						if err != nil {
+							c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find mix", "details": err.Error()})
+							return
+						}
+						mixes = append(mixes, mix)
+					}
+				} else if mixID, ok := cart.Mix.(primitive.ObjectID); ok {
+					// cart.Mix is a single ObjectID, fetch the mix document
+					var mix entities.Mixes
+					err := mixesCollection.FindOne(c, bson.M{"_id": mixID}).Decode(&mix)
+					if err != nil {
+						c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find mix", "details": err.Error()})
+						return
+					}
+					mixes = append(mixes, mix)
+				} else {
+					// cart.Mix has an invalid type
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid mix field type"})
 					return
 				}
-				mixes = append(mixes, mix)
 			}
+			// for _, mixID := range cart.Mix {
+			// 	var mix entities.Mixes
+
+			// 	// Find the mix document by its ID
+			// 	err := mixesCollection.FindOne(c, bson.M{"_id": mixID}).Decode(&mix)
+			// 	if err != nil {
+			// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find mix", "details": err.Error()})
+			// 		return
+			// 	}
+			// 	mixes = append(mixes, mix)
+			// }
 
 			// Define a slice to store mix products
 			var mixProducts []entities.MixProducts
@@ -391,9 +548,8 @@ func GetCarts(c *gin.Context) {
 				})
 			}
 
-		} else if len(cart.Products) > 0 && len(cart.Mix) > 0 {
+		} else if len(cart.Products) > 0 && cart.Mix != nil {
 			for _, product := range cart.Products {
-				// Fetch detailed product information from your data source (e.g., database)
 				var retrievedProduct entities.Products
 				err := prodCollection.FindOne(c, bson.M{"_id": product.ProductId}).Decode(&retrievedProduct)
 				if err != nil {
@@ -433,38 +589,150 @@ func GetCarts(c *gin.Context) {
 					// Add more fields as needed
 				}
 				var variations []entities.Properties
-				cursor, err := propertiesCollection.Find(c, bson.M{"_id": bson.M{"$in": product.VariationsKey}})
-				if err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-					return
-				}
-				defer cursor.Close(c)
-
-				// Iterate through the cursor to decode each variation
-				for cursor.Next(c) {
-					var variation entities.Properties
-					if err := cursor.Decode(&variation); err != nil {
-						c.JSON(http.StatusInternalServerError, gin.H{"error6": err.Error()})
-						return
-					}
-					variations = append(variations, variation)
-				}
-				if err := cursor.Err(); err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error7": err.Error()})
-					return
-				}
-				var mixes []entities.Mixes
-				for _, mixID := range cart.Mix {
-					var mix entities.Mixes
-
-					// Find the mix document by its ID
-					err := mixesCollection.FindOne(c, bson.M{"_id": mixID}).Decode(&mix)
+				if product.VariationsKey == nil {
+					cur, err := prodCollection.Find(c, bson.M{"_id": product.ProductId})
 					if err != nil {
-						c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find mix", "details": err.Error()})
+						c.JSON(http.StatusInternalServerError, gin.H{"error0": err.Error()})
 						return
 					}
-					mixes = append(mixes, mix)
+					defer cur.Close(c)
+					for cur.Next(c) {
+						var pro map[string]interface{}
+						if err := cur.Decode(&pro); err != nil {
+							c.JSON(http.StatusInternalServerError, gin.H{"error22": err.Error()})
+							return
+
+						}
+
+					}
+					// continue
+
+				} else {
+					cursor, err := propertiesCollection.Find(c, bson.M{"_id": bson.M{"$in": product.VariationsKey}})
+
+					if err != nil {
+						c.JSON(http.StatusInternalServerError, gin.H{"error1": err.Error()})
+						return
+					}
+					defer cursor.Close(c)
+
+					// Iterate through the cursor to decode each variation
+					for cursor.Next(c) {
+						var variation entities.Properties
+						if err := cursor.Decode(&variation); err != nil {
+							c.JSON(http.StatusInternalServerError, gin.H{"error2": err.Error()})
+							return
+						}
+						variations = append(variations, variation)
+					}
+					if err := cursor.Err(); err != nil {
+						c.JSON(http.StatusInternalServerError, gin.H{"error3": err.Error()})
+						return
+					}
+
 				}
+				//***********************************************************************************
+				// Fetch detailed product information from your data source (e.g., database)
+				// var retrievedProduct entities.Products
+				// err := prodCollection.FindOne(c, bson.M{"_id": product.ProductId}).Decode(&retrievedProduct)
+				// if err != nil {
+				// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch product", "details": err.Error()})
+				// 	return
+				// }
+
+				// // Create a detailed product structure
+				// detailedProduct := map[string]interface{}{
+				// 	"_id":             retrievedProduct.ID.Hex(),
+				// 	"name":            retrievedProduct.Name,
+				// 	"price":           retrievedProduct.Price,
+				// 	"notExist":        retrievedProduct.NotExist,
+				// 	"amazing":         retrievedProduct.Amazing,
+				// 	"productType":     retrievedProduct.ProductType,
+				// 	"quantity":        retrievedProduct.Quantity,
+				// 	"comments":        retrievedProduct.Comment,
+				// 	"parent":          retrievedProduct.Parent,
+				// 	"categories":      retrievedProduct.Category,
+				// 	"tags":            retrievedProduct.Tags,
+				// 	"similarProducts": retrievedProduct.SimilarProducts,
+				// 	"name_fuzzy":      retrievedProduct.NameFuzzy,
+				// 	"images":          retrievedProduct.Images,
+				// 	"details":         retrievedProduct.Details,
+				// 	"discountPercent": retrievedProduct.DiscountPercent,
+				// 	"stock":           retrievedProduct.Stock,
+				// 	"categoryId":      retrievedProduct.CategoryID,
+				// 	"attributes":      retrievedProduct.Attributes,
+				// 	"slug":            retrievedProduct.Slug,
+				// 	"shortId":         retrievedProduct.ShortID,
+				// 	"dimensions":      retrievedProduct.Dimensions,
+				// 	"variations":      retrievedProduct.Variations,
+				// 	"createdAt":       retrievedProduct.CreatedAt,
+				// 	"updatedAt":       retrievedProduct.UpdatedAt,
+				// 	"salesNumber":     retrievedProduct.SalesNumber,
+				// 	"bannerUrl":       retrievedProduct.BannerUrl,
+				// 	// Add more fields as needed
+				// }
+				// var variations []entities.Properties
+				// cursor, err := propertiesCollection.Find(c, bson.M{"_id": bson.M{"$in": product.VariationsKey}})
+				// if err != nil {
+				// 	c.JSON(http.StatusInternalServerError, gin.H{"error20": err.Error()})
+				// 	return
+				// }
+				// defer cursor.Close(c)
+
+				// // Iterate through the cursor to decode each variation
+				// for cursor.Next(c) {
+				// 	var variation entities.Properties
+				// 	if err := cursor.Decode(&variation); err != nil {
+				// 		c.JSON(http.StatusInternalServerError, gin.H{"error6": err.Error()})
+				// 		return
+				// 	}
+				// 	variations = append(variations, variation)
+				// }
+				// if err := cursor.Err(); err != nil {
+				// 	c.JSON(http.StatusInternalServerError, gin.H{"error7": err.Error()})
+				// 	return
+				// }
+				//***************************************************************************************
+				var mixes []entities.Mixes
+				if cart.Mix != nil {
+					// Check if cart.Mix is an array of ObjectIDs
+					if mixIDs, ok := cart.Mix.([]primitive.ObjectID); ok {
+						// cart.Mix is an array, fetch mix documents for each mix ID
+						for _, mixID := range mixIDs {
+							var mix entities.Mixes
+							err := mixesCollection.FindOne(c, bson.M{"_id": mixID}).Decode(&mix)
+							if err != nil {
+								c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find mix", "details": err.Error()})
+								return
+							}
+							mixes = append(mixes, mix)
+						}
+					} else if mixID, ok := cart.Mix.(primitive.ObjectID); ok {
+						// cart.Mix is a single ObjectID, fetch the mix document
+						var mix entities.Mixes
+						err := mixesCollection.FindOne(c, bson.M{"_id": mixID}).Decode(&mix)
+						if err != nil {
+							c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find mix", "details": err.Error()})
+							return
+						}
+						mixes = append(mixes, mix)
+					} else {
+						// cart.Mix has an invalid type
+						c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid mix field type"})
+						return
+					}
+				}
+				// for _, mixID := range cart.Mix {
+				// 	var mix entities.Mixes
+
+				// 	// Find the mix document by its ID
+				// 	err := mixesCollection.FindOne(c, bson.M{"_id": mixID}).Decode(&mix)
+				// 	if err != nil {
+				// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find mix", "details": err.Error()})
+				// 		return
+				// 	}
+				// 	mixes = append(mixes, mix)
+				// }
 
 				// Define a slice to store mix products
 				var mixProducts []entities.MixProducts
@@ -540,6 +808,7 @@ func GetCarts(c *gin.Context) {
 	c.JSON(http.StatusNoContent, gin.H{})
 }
 
+//*****************************************************************************************************************************
 // func GetCarts(c *gin.Context) {
 // 	var products []map[string]interface{} // Combined product structure
 
